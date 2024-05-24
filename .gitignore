@@ -3,6 +3,12 @@
 *.pyc
 __pycache__
 
+*.yaml
+*.yml
+
+pnpm-lock.yaml
+package.json
+
 # Environments 
 .env 
 .venv 

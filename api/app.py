@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, abort
 import sqlite3
 from functools import wraps
-from config import VALID_API_KEYS, ADMIN_API_KEYS  # Import the API keys
+from config import VALID_API_KEYS, ADMIN_API_KEYS
 
 app = Flask(__name__)
 

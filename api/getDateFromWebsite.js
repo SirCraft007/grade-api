@@ -1,0 +1,102 @@
+/*
+To open the console in Chrome, use this keyboard shortcut: "Cmd + Option + J" (on a Mac) or "Ctrl +Shift +J" (on Windows).
+Then, copy and paste the code below into the console and press Enter.
+Drag the downloaded file into the same folder as app.py and run the python script.
+*/
+
+function getValues() {
+    const elements = document.querySelectorAll(
+        '.mdl-data-table [colspan="5"] tr'
+    );
+    const texts = [];
+
+    elements.forEach((element) => {
+        texts.push(element.textContent.trim());
+    });
+
+    return texts;
+}
+function getSubjectName() {
+    var divsWithB = document.querySelectorAll('td > b');
+    var subjects = [];
+
+    // Loop through each div with <b> tags
+    divsWithB.forEach(function (div) {
+        // Select the parent node of each div
+        var parentDiv = div.parentNode;
+        // Remove child text nodes from the parent div
+        var textContentWithoutChildren = Array.from(parentDiv.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent)
+            .join('');
+        // Add the subject to the subjects array
+        subjects.push(textContentWithoutChildren);
+    });
+
+    // Return the subjects object
+    return subjects;
+}
+
+function groupElementsIntoObject(array) {
+    const result = {};
+    let currentArray = [];
+    let groupCounter = 1; // Initialize a counter to name groups uniquely
+
+    array.forEach((element) => {
+        if (element !== "Datum\n                                                        Thema\n                            Bewertung\n                            Gewichtung") {
+            currentArray.push(element); // Add the current element to the temporary array
+            if (element.includes("Aktueller Durchschnitt:")) {
+                currentArray.pop(); // Remove the last element from theelement.split array
+                currentArray = currentArray.map((entry) => {
+                    const first = entry.split("\n").filter((line, index) => index !== 2);
+                    const lines = first.filter((line, index) => index !== 4);
+                    return {
+                        date: lines[0].trim(),
+                        name: lines[1].trim(),
+                        grade: lines[2].trim(),
+                        details: lines[3].replace("Details zur Note", "").replace('Detailprüfung mit Punkten zu Aufgaben', "").split('Aufgabe').join(' Aufgabe').trim(),
+                        weight: lines[4].trim(),
+                    };
+                });
+                const groupName = `Subjekt ${groupCounter}`; // Create a unique group name
+                result[groupName] = [...currentArray]; // Add the current group to the result object
+                currentArray = []; // Reset currentArray for the next group
+                groupCounter++; // Increment the group counter for the next group name
+            }
+        }
+    });
+
+    // If there are elements after the last "Aktueller Durchschnitt:", add them as a separate group
+    if (currentArray.length > 0) {
+        const groupName = `Group ${groupCounter}`;
+        result[groupName] = currentArray;
+    }
+
+    return result;
+}
+
+const grades = groupElementsIntoObject(getValues());
+const subjects = getSubjectName();
+
+console.log("Das in die tabelle names 'values' eintragen indem du rechtscklickst und 'copy object' auswählst:");
+console.log(grades);
+console.log("Das in die tabelle names 'subjekts' eintragen indem du rechtscklickst und 'copy object' auswählst:");
+console.log(subjects);
+
+const combinedData = {
+    subjects,
+    grades
+};
+
+var jsonString = JSON.stringify(combinedData, null, 2);
+
+// Create a Blob with the JSON content
+var blob = new Blob([jsonString], { type: "application/json" });
+
+// Create a link element to download the Blob
+var link = document.createElement("a");
+link.download = "grades.json"; // Set the filename
+link.href = window.URL.createObjectURL(blob);
+
+// Simulate clicking the link to trigger download
+link.click();

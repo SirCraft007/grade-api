@@ -1,0 +1,575 @@
+{
+  "subjects": [
+    "Nawimat",
+    "Biologie",
+    "Chemie",
+    "Deutsch",
+    "Englisch",
+    "französisch G2b",
+    "Web of Things & Robotik",
+    "Geographie",
+    "Grundlagenfach Sologesang",
+    "Geschichte",
+    "Informatik",
+    "Mathematik",
+    "Musik",
+    "Physik",
+    "Sport",
+    "Einführung Wirtschaft und Recht"
+  ],
+  "grades": {
+    "Subjekt 1": [
+      {
+        "date": "20.01.2024",
+        "name": "Schnitt Nap Chemie",
+        "grade": "5.12",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "22.01.2024",
+        "name": "Mathematik Schnitt",
+        "grade": "5",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "01.03.2024",
+        "name": "N1",
+        "grade": "4.1",
+        "details": "Aufgabe 1: 3 Aufgabe 2: 3 Aufgabe 3: 3",
+        "weight": "0.5"
+      },
+      {
+        "date": "26.04.2024",
+        "name": "N2",
+        "grade": "6",
+        "details": "Aufgabe 1: 1 Aufgabe 2: 5 Aufgabe 3: 22",
+        "weight": "0.5"
+      }
+    ],
+    "Subjekt 2": [
+      {
+        "date": "22.09.2023",
+        "name": "Biology-exam 1",
+        "grade": "4.4",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "15.12.2023",
+        "name": "Biology-exam 2",
+        "grade": "4.8",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "25.03.2024",
+        "name": "Biology exam No. 3",
+        "grade": "4.4",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "10.06.2024",
+        "name": "Biology exam No. 4",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 3": [
+      {
+        "date": "01.11.2023",
+        "name": "Struktur & Eigenschaft, Stöchiometrie",
+        "grade": "4.3",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "19.01.2024",
+        "name": "Waschmittel und Thermodynamik",
+        "grade": "4.9",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "22.01.2024",
+        "name": "SemesterEx",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "19.06.2024",
+        "name": "Reaktionsgeschw. und Gleichgewicht",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "24.06.2024",
+        "name": "SemesterEx",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 4": [
+      {
+        "date": "28.09.2023",
+        "name": "Erörterung",
+        "grade": "5.11",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "26.10.2023",
+        "name": "Mündliche Mitarbeit Quartal 1",
+        "grade": "5.5",
+        "details": "",
+        "weight": "0.5"
+      },
+      {
+        "date": "04.12.2023",
+        "name": "Zusammenfassung und Stellungnahme - Nerds retten die Welt",
+        "grade": "4.53",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "07.12.2023",
+        "name": "G2b Nerds retten die Welt Präsentation",
+        "grade": "4.75",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "15.01.2024",
+        "name": "Vorbereitung Nerds retten die Welt",
+        "grade": "5.23",
+        "details": "",
+        "weight": "0.5"
+      },
+      {
+        "date": "16.01.2024",
+        "name": "Mündlichnote/Mitarbeit Deutschunterricht",
+        "grade": "5.75",
+        "details": "",
+        "weight": "0.5"
+      },
+      {
+        "date": "06.05.2024",
+        "name": "Literaturclub",
+        "grade": "5.25",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "06.05.2024",
+        "name": "Mündliche Beteiligung 3. Quartal",
+        "grade": "5.5",
+        "details": "",
+        "weight": "0.5"
+      },
+      {
+        "date": "06.05.2024",
+        "name": "Zusammenfassung und Stellungnahme (Austausch-SuS)",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 5": [
+      {
+        "date": "12.09.2023",
+        "name": "Grammar Exam",
+        "grade": "5.2",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "27.11.2023",
+        "name": "Grammar exam",
+        "grade": "5",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "08.05.2024",
+        "name": "Grammar exam",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "12.06.2024",
+        "name": "Writing Clinic Year 2",
+        "grade": "",
+        "details": "",
+        "weight": "0.5"
+      },
+      {
+        "date": "25.06.2024",
+        "name": "Classroom Performance Half Classes",
+        "grade": "",
+        "details": "",
+        "weight": "0.5"
+      }
+    ],
+    "Subjekt 6": [
+      {
+        "date": "08.09.2023",
+        "name": "2300 Mündlichprüfung",
+        "grade": "3.6",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "20.09.2023",
+        "name": "1500",
+        "grade": "3.25",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "29.09.2023",
+        "name": "1900 B Dialog 1",
+        "grade": "3.3",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "21.11.2023",
+        "name": "Prüfung Pfister grammaire",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "21.11.2023",
+        "name": "Prüfung Pfister Littérature",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "29.11.2023",
+        "name": "2300 Rédactionécologie",
+        "grade": "3.6",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "18.12.2023",
+        "name": "2208",
+        "grade": "2.05",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "22.03.2024",
+        "name": "2100",
+        "grade": "2.9",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "25.04.2024",
+        "name": "Mündlichnote 2. Semester",
+        "grade": "4.8",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "31.05.2024",
+        "name": "Prüfung G2b",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 7": [
+      {
+        "date": "10.11.2023",
+        "name": "Development test",
+        "grade": "5.1",
+        "details": "Punkte: 26",
+        "weight": "1"
+      },
+      {
+        "date": "02.02.2024",
+        "name": "Resource consumption test",
+        "grade": "5.3",
+        "details": "Punkte: 25.5",
+        "weight": "1"
+      },
+      {
+        "date": "26.04.2024",
+        "name": "Urban Environments Test",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 8": [
+      {
+        "date": "05.11.2023",
+        "name": "Final Participation Grade",
+        "grade": "5.25",
+        "details": "",
+        "weight": "0.5"
+      },
+      {
+        "date": "14.11.2023",
+        "name": "Source Analysis Early Modern History",
+        "grade": "5.1",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "11.03.2024",
+        "name": "Exam US History",
+        "grade": "4.9",
+        "details": "Aufgabe Definition & significance: 3.5 Aufgabe Multiple Choice: 5 Aufgabe Source Text: 4.5 Aufgabe Essay American Dream: 5",
+        "weight": "1"
+      },
+      {
+        "date": "05.05.2024",
+        "name": "PROVISIONAL Participation Grade",
+        "grade": "4.7",
+        "details": "",
+        "weight": "0.5"
+      }
+    ],
+    "Subjekt 9": [
+      {
+        "date": "08.11.2023",
+        "name": "1.Prüfung Informatik",
+        "grade": "5",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "17.01.2024",
+        "name": "Prüfung 2",
+        "grade": "6",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 10": [
+      {
+        "date": "07.09.2023",
+        "name": "Linear Functions",
+        "grade": "5.63",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "07.12.2023",
+        "name": "Functions 2 & 3",
+        "grade": "5.72",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "08.03.2024",
+        "name": "Trigonometry",
+        "grade": "6",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 11": [
+      {
+        "date": "11.09.2023",
+        "name": "Dreiklänge (7116)",
+        "grade": "3.6",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "11.09.2023",
+        "name": "Dreiklänge Earmaster (7116)",
+        "grade": "5.7",
+        "details": "",
+        "weight": "0.333333"
+      },
+      {
+        "date": "13.11.2023",
+        "name": "Kadenzen (7116)",
+        "grade": "5.3",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "15.01.2024",
+        "name": "Vierklänge (7116)",
+        "grade": "2.3",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "18.03.2024",
+        "name": "Modi schriftlich (6307)",
+        "grade": "4.1",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "18.03.2024",
+        "name": "Modi Earmaster (6307)",
+        "grade": "5.1",
+        "details": "",
+        "weight": "0.333333"
+      },
+      {
+        "date": "03.06.2024",
+        "name": "Vorsingen",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "17.06.2024",
+        "name": "Tonleitern schriftlich (9113)",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "17.06.2024",
+        "name": "Tonleitern EarMaster (9113)",
+        "grade": "",
+        "details": "",
+        "weight": "0.333333"
+      }
+    ],
+    "Subjekt 12": [
+      {
+        "date": "27.10.2023",
+        "name": "Exam 1",
+        "grade": "5.88",
+        "details": "Punkte: 588",
+        "weight": "1"
+      },
+      {
+        "date": "14.11.2023",
+        "name": "Exam 1 - Wigger",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "12.01.2024",
+        "name": "Exam 2",
+        "grade": "4.59",
+        "details": "Punkte: 459",
+        "weight": "1"
+      },
+      {
+        "date": "23.01.2024",
+        "name": "Exam 2 Makeup",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "02.04.2024",
+        "name": "Exam 3",
+        "grade": "5.28",
+        "details": "Punkte: 528",
+        "weight": "1"
+      },
+      {
+        "date": "23.04.2024",
+        "name": "Exam 3 Makeup",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ],
+    "Subjekt 13": [
+      {
+        "date": "11.09.2023",
+        "name": "Hürden",
+        "grade": "4.5",
+        "details": "",
+        "weight": "2"
+      },
+      {
+        "date": "19.09.2023",
+        "name": "Brückenlauf",
+        "grade": "1.25",
+        "details": "",
+        "weight": "2"
+      },
+      {
+        "date": "11.12.2023",
+        "name": "Handball Spielbeurteilung",
+        "grade": "5",
+        "details": "",
+        "weight": "2"
+      },
+      {
+        "date": "12.12.2023",
+        "name": "Minitrampolin Überschlag",
+        "grade": "4",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "19.12.2023",
+        "name": "Minitrampolin Rondat",
+        "grade": "5",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "25.03.2024",
+        "name": "Parcours",
+        "grade": "3.75",
+        "details": "",
+        "weight": "2"
+      },
+      {
+        "date": "26.03.2024",
+        "name": "Basketball Spielbeurteilung",
+        "grade": "4.5",
+        "details": "",
+        "weight": "2"
+      },
+      {
+        "date": "29.04.2024",
+        "name": "Jonglieren",
+        "grade": "",
+        "details": "",
+        "weight": "2"
+      }
+    ],
+    "Subjekt 14": [
+      {
+        "date": "11.12.2023",
+        "name": "Recht Grundlagen",
+        "grade": "3.6",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "14.03.2024",
+        "name": "Exam Recht & Economics",
+        "grade": "4.9",
+        "details": "",
+        "weight": "1"
+      },
+      {
+        "date": "13.06.2024",
+        "name": "Exam Economics",
+        "grade": "",
+        "details": "",
+        "weight": "1"
+      }
+    ]
+  }
+}

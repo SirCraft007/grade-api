@@ -114,6 +114,14 @@ def require_admin_key(f):
 db = sqlite3.connect("Grades.db", check_same_thread=False)
 cursor = db.cursor()
 
+@app.route('/')
+def home():
+    return 'Hello, World!'
+
+@app.route('/about')
+def about():
+    return 'About'
+
 
 @app.route("/subjects/<int:subject_id>", methods=["GET"])
 @require_api_key

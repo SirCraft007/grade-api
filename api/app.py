@@ -15,6 +15,9 @@ ADMIN_API_KEYS = [
 
 app = Flask(__name__)
 
+db = sqlite3.connect("data/Grades.db", check_same_thread=False)
+cursor = db.cursor()
+
 
 def update_subjects():
     cursor.execute("SELECT id, name FROM subjects")
@@ -120,9 +123,6 @@ def require_admin_key(f):
 
     return decorated_function
 
-
-db = sqlite3.connect("Grades.db", check_same_thread=False)
-cursor = db.cursor()
 
 @app.route('/')
 def home():

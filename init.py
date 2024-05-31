@@ -7,7 +7,7 @@ with open("Grades schulNetz.json", "r") as file:
 grades = data["grades"]
 subjects = data["subjects"]
 nograde_index = [subjects.index("Web of Things & Robotik")+1,subjects.index("Grundlagenfach Sologesang")+1]
-db = sqlite3.connect("data/Grades.db")
+db = sqlite3.connect("Grades.db")
 cursor = db.cursor()
 
 # Drop the tables if they exist

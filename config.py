@@ -11,3 +11,16 @@ ADMIN_API_KEYS = [
     "893704980be4ab97bfdeb062f4024cf8a7da8570c5627553b535490c48045546",
     "3d9a5cafeba42343dc1605c9004d9091fdc2a72a99c84bca0d4cc8c9ed2a483c",
 ]
+
+test_data = [
+    "Hello",
+    "World",
+    "This",
+    "is",
+    "a",
+    "test",
+    "data",
+    "for",
+    "the",
+    "API",
+]

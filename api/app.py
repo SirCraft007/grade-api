@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, abort
 import sqlite3
 from functools import wraps
 
-from config import ADMIN_API_KEYS, VALID_API_KEYS
+from api.config import ADMIN_API_KEYS, VALID_API_KEYS
 
 app = Flask(__name__)
 
@@ -373,7 +373,3 @@ def get_subjects():
         return jsonify({"success": True, "subjects": subjects_list}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
-
-
-if __name__ == "__main__":
-    app.run()

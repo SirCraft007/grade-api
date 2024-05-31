@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, render_template
 import sqlite3
 from functools import wraps
 
@@ -117,7 +117,7 @@ def require_admin_key(f):
 
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return render_template("index.html")
 
 @app.route("/subjects/<int:subject_id>", methods=["GET"])
 @require_api_key
@@ -373,3 +373,6 @@ def get_subjects():
         return jsonify({"success": True, "subjects": subjects_list}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+    
+if __name__ == '__main__':
+    app.run(debug=True)

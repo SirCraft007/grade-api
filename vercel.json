@@ -1,8 +1,5 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/app" }],
-  "functions": {
-    "api/app.py": {
-      "includeFiles": "grades.db"
-    }
-  }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ]
 }

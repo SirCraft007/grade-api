@@ -198,7 +198,7 @@
       {
         "date": "08.05.2024",
         "name": "Grammar exam",
-        "grade": "",
+        "grade": "4.2",
         "details": "",
         "weight": "1"
       },
@@ -307,8 +307,8 @@
       {
         "date": "26.04.2024",
         "name": "Urban Environments Test",
-        "grade": "",
-        "details": "",
+        "grade": "5.9",
+        "details": "Punkte: 29",
         "weight": "1"
       }
     ],
@@ -340,6 +340,13 @@
         "grade": "4.7",
         "details": "",
         "weight": "0.5"
+      },
+      {
+        "date": "17.05.2024",
+        "name": "Source Analysis 19th Century",
+        "grade": "",
+        "details": "",
+        "weight": "1"
       }
     ],
     "Subjekt 9": [
@@ -546,6 +553,13 @@
         "grade": "",
         "details": "",
         "weight": "2"
+      },
+      {
+        "date": "03.06.2024",
+        "name": "Weitsprung",
+        "grade": "",
+        "details": "",
+        "weight": "1"
       }
     ],
     "Subjekt 14": [

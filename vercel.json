@@ -1,5 +1,13 @@
 {
   "version": 2,
-  "builds": [{ "src": "app.py", "use": "@vercel/python" }],
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python",
+      "config": {
+        "buildCommand": "./start.sh"
+      }
+    }
+  ],
   "routes": [{ "src": "/(.*)", "dest": "app.py" }]
 }

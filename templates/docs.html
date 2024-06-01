@@ -1,0 +1,120 @@
+{% extends 'base.html' %} {% block head %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/docs.css') }}"
+/>
+<title>API Documentation</title>
+<h1>API Documentation</h1>
+
+{% endblock %} {% block content %}
+<main>
+  <section>
+    <h2>Subjects</h2>
+    <div class="endpoint">
+      <h3>Get All Subjects</h3>
+      <p><strong>Route:</strong> <code>GET /subjects</code></p>
+      <p><strong>Description:</strong> Retrieve a list of all subjects.</p>
+      <p><strong>Response:</strong> JSON array of subjects.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Get a Single Subject</h3>
+      <p><strong>Route:</strong> <code>GET /subjects/{subjectId}</code></p>
+      <p>
+        <strong>Description:</strong> Retrieve details for a specific subject by
+        its ID.
+      </p>
+      <p><strong>Response:</strong> JSON object containing subject details.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Create a New Subject</h3>
+      <p><strong>Route:</strong> <code>POST /subjects</code></p>
+      <p><strong>Description:</strong> Add a new subject.</p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>name</code>,
+        <code>average</code>, <code>points</code>, <code>num_exams</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object of the created subject.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Update a Subject</h3>
+      <p><strong>Route:</strong> <code>PUT /subjects/{subjectId}</code></p>
+      <p>
+        <strong>Description:</strong> Update details of an existing subject.
+      </p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>name</code>,
+        <code>average</code>, <code>points</code>, <code>num_exams</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object of the updated subject.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Delete a Subject</h3>
+      <p><strong>Route:</strong> <code>DELETE /subjects/{subjectId}</code></p>
+      <p><strong>Description:</strong> Remove a subject by its ID.</p>
+      <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+    </div>
+  </section>
+  <section>
+    <h2>Grades</h2>
+    <div class="endpoint">
+      <h3>Get All Grades</h3>
+      <p><strong>Route:</strong> <code>GET /grades</code></p>
+      <p><strong>Description:</strong> Retrieve a list of all grades.</p>
+      <p><strong>Response:</strong> JSON array of grades.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Get Grades for a Specific Subject</h3>
+      <p>
+        <strong>Route:</strong>
+        <code>GET /subjects/{subjectId}/grades</code>
+      </p>
+      <p>
+        <strong>Description:</strong> Retrieve all grades for a specific
+        subject.
+      </p>
+      <p>
+        <strong>Response:</strong> JSON array of grades for the specified
+        subject.
+      </p>
+    </div>
+    <div class="endpoint">
+      <h3>Get a Single Grade</h3>
+      <p><strong>Route:</strong> <code>GET /grades/{gradeId}</code></p>
+      <p>
+        <strong>Description:</strong> Retrieve details of a specific grade by
+        its ID.
+      </p>
+      <p><strong>Response:</strong> JSON object containing grade details.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Create a New Grade</h3>
+      <p><strong>Route:</strong> <code>POST /grades</code></p>
+      <p><strong>Description:</strong> Add a new grade.</p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>date</code>,
+        <code>name</code>, <code>grade</code>, <code>details</code>,
+        <code>weight</code>, <code>subject_id</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object of the created grade.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Update a Grade</h3>
+      <p><strong>Route:</strong> <code>PUT /grades/{gradeId}</code></p>
+      <p><strong>Description:</strong> Update details of an existing grade.</p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>date</code>,
+        <code>name</code>, <code>grade</code>, <code>details</code>,
+        <code>weight</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object of the updated grade.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Delete a Grade</h3>
+      <p><strong>Route:</strong> <code>DELETE /grades/{gradeId}</code></p>
+      <p><strong>Description:</strong> Remove a grade by its ID.</p>
+      <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+    </div>
+  </section>
+</main>
+
+{% endblock %}

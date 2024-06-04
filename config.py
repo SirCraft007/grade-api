@@ -1,4 +1,3 @@
-# config.py
 
 # Regular API keys
 VALID_API_KEYS = [
@@ -12,15 +11,3 @@ ADMIN_API_KEYS = [
     "3d9a5cafeba42343dc1605c9004d9091fdc2a72a99c84bca0d4cc8c9ed2a483c",
 ]
 
-test_data = [
-    "Hello",
-    "World",
-    "This",
-    "is",
-    "a",
-    "test",
-    "data",
-    "for",
-    "the",
-    "API",
-]

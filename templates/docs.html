@@ -14,7 +14,11 @@
       <h3>Get All Subjects</h3>
       <p><strong>Route:</strong> <code>GET /subjects</code></p>
       <p><strong>Description:</strong> Retrieve a list of all subjects.</p>
-      <p><strong>Response:</strong> JSON array of subjects.</p>
+      <p>
+        <strong>Response:</strong> JSON array of subjects with <code>id</code>,
+        <code>name</code>, <code>average</code>, <code>points</code>,
+        <code>num_exams</code> for each subject.
+      </p>
     </div>
     <div class="endpoint">
       <h3>Get a Single Subject</h3>
@@ -23,7 +27,11 @@
         <strong>Description:</strong> Retrieve details for a specific subject by
         its ID.
       </p>
-      <p><strong>Response:</strong> JSON object containing subject details.</p>
+      <p>
+        <strong>Response:</strong> JSON object containing <code>id</code>,
+        <code>name</code>, <code>average</code>, <code>points</code>,
+        <code>num_exams</code> for the specified subject.
+      </p>
     </div>
     <div class="endpoint">
       <h3>Create a New Subject</h3>
@@ -42,8 +50,7 @@
         <strong>Description:</strong> Update details of an existing subject.
       </p>
       <p>
-        <strong>Request Body:</strong> JSON containing <code>name</code>,
-        <code>average</code>, <code>points</code>, <code>num_exams</code>.
+        <strong>Request Body:</strong> JSON containing <code>name</code> and/or<code>weight</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the updated subject.</p>
     </div>
@@ -60,7 +67,11 @@
       <h3>Get All Grades</h3>
       <p><strong>Route:</strong> <code>GET /grades</code></p>
       <p><strong>Description:</strong> Retrieve a list of all grades.</p>
-      <p><strong>Response:</strong> JSON array of grades.</p>
+      <p>
+        <strong>Response:</strong> JSON array with <code>id</code>,
+        <code>grade</code>, <code>weight</code>, <code>date</code>,
+        <code>details</code>, <code>subject</code>
+      </p>
     </div>
     <div class="endpoint">
       <h3>Get Grades for a Specific Subject</h3>
@@ -73,8 +84,9 @@
         subject.
       </p>
       <p>
-        <strong>Response:</strong> JSON array of grades for the specified
-        subject.
+        <strong>Response:</strong> JSON array of <code>id</code>,
+        <code>grade</code>, <code>weight</code>, <code>date</code>,
+        <code>details</code> for each grade of the specified subject. subject.
       </p>
     </div>
     <div class="endpoint">
@@ -84,7 +96,11 @@
         <strong>Description:</strong> Retrieve details of a specific grade by
         its ID.
       </p>
-      <p><strong>Response:</strong> JSON object containing grade details.</p>
+      <p>
+        <strong>Response:</strong> JSON object containing <code>id</code>,
+        <code>grade</code>, <code>weight</code>, <code>date</code>,
+        <code>details</code>, <code>subject</code>
+      </p>
     </div>
     <div class="endpoint">
       <h3>Create a New Grade</h3>
@@ -103,7 +119,7 @@
       <p><strong>Description:</strong> Update details of an existing grade.</p>
       <p>
         <strong>Request Body:</strong> JSON containing <code>date</code>,
-        <code>name</code>, <code>grade</code>, <code>details</code>,
+        <code>name</code>, <code>grade</code>, <code>details</code>and/or
         <code>weight</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the updated grade.</p>

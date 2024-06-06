@@ -5,10 +5,11 @@ from functools import wraps
 
 api_routes = Blueprint("api_routes", __name__)
 
-
+# Connect to the database
 db = sqlite3.connect("Grades.db", check_same_thread=False)
 cursor = db.cursor()
 
+# Function to get the name of a subject based on its ID
 def get_subject_name(subject_id):
     cursor.execute("SELECT name FROM subjects WHERE id=?", (subject_id,))
     subject = cursor.fetchone()
@@ -17,7 +18,7 @@ def get_subject_name(subject_id):
     else:
         return None
 
-
+# Decorator function to require an API key for accessing routes
 def require_api_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -34,7 +35,7 @@ def require_api_key(f):
 
     return decorated_function
 
-
+# Decorator function to require an admin API key for accessing routes
 def require_admin_key(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -51,7 +52,7 @@ def require_admin_key(f):
 
     return decorated_function
 
-
+# Function to update the average, points, and number of exams for each subject
 def update_subjects():
     cursor.execute("SELECT id, name FROM subjects")
     subjects = cursor.fetchall()
@@ -88,7 +89,7 @@ def update_subjects():
         )
     update_main()
 
-
+# Function to update the total average, total points, and total number of exams in the main table
 def update_main():
     cursor.execute("SELECT average,points,name,num_exams,weight FROM subjects")
     subjects = cursor.fetchall()
@@ -112,8 +113,8 @@ def update_main():
             num_exams,
         ),
     )
-    
 
+# Route to get information about a specific subject
 @api_routes.route("/subjects/<int:subject_id>", methods=["GET"])
 @require_api_key
 def get_subject(subject_id):
@@ -150,7 +151,7 @@ def get_subject(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to add a new subject
 @api_routes.route("/subjects", methods=["POST"])
 @require_admin_key
 def add_subject():
@@ -186,7 +187,7 @@ def add_subject():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to update an existing subject
 @api_routes.route("/subjects/<int:subject_id>", methods=["PUT"])
 @require_admin_key
 def update_subject(subject_id):
@@ -210,7 +211,7 @@ def update_subject(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to delete a subject
 @api_routes.route("/subjects/<int:subject_id>", methods=["DELETE"])
 @require_admin_key
 def delete_subject(subject_id):
@@ -225,7 +226,7 @@ def delete_subject(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to get information about a specific grade
 @api_routes.route("/grades/<int:grade_id>", methods=["GET"])
 @require_api_key
 def get_grade(grade_id):
@@ -249,7 +250,7 @@ def get_grade(grade_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to get grades for a specific subject
 @api_routes.route("/subjects/<int:subject_id>/grades", methods=["GET"])
 @require_api_key
 def subject_grade(subject_id):
@@ -267,7 +268,7 @@ def subject_grade(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to add a new grade
 @api_routes.route("/grades", methods=["POST"])
 @require_admin_key
 def add_grade():
@@ -302,7 +303,7 @@ def add_grade():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to update an existing grade
 @api_routes.route("/grades/<int:grade_id>", methods=["PUT"])
 @require_admin_key
 def update_grade(grade_id):
@@ -336,7 +337,7 @@ def update_grade(grade_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to delete a grade
 @api_routes.route("/grades/<int:grade_id>", methods=["DELETE"])
 @require_admin_key
 def delete_grade(grade_id):
@@ -348,7 +349,7 @@ def delete_grade(grade_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
+# Route to get information about all subjects
 @api_routes.route("/subjects", methods=["GET"])
 @require_api_key
 def get_subjects():

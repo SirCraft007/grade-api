@@ -231,7 +231,7 @@ def delete_subject(subject_id):
 def get_grade(grade_id):
     try:
         cursor.execute(
-            "SELECT id,name, grade, weight,details, subject_id FROM grades WHERE id=?",
+            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=?",
             (grade_id,),
         )
         grade = cursor.fetchone()
@@ -240,8 +240,9 @@ def get_grade(grade_id):
             "name": grade[1],
             "grade": grade[2],
             "weight": grade[3],
-            "details": grade[4],
-            "subject": get_subject_name(grade[5]),
+            "date": grade[4],
+            "details": grade[5],
+            "subject": get_subject_name(grade[6]),
         }
         return jsonify({"success": True, "grade": grade_list}), 200
 
@@ -254,12 +255,12 @@ def get_grade(grade_id):
 def subject_grade(subject_id):
     try:
         cursor.execute(
-            "SELECT id, grade, weight,details FROM grades WHERE subject_id=?",
+            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=?",
             (subject_id,),
         )
         grades = cursor.fetchall()
         grades_list = [
-            {"id": grade[0], "grade": grade[1], "weight": grade[2], "details": grade[3]}
+            {"id": grade[0], "grade": grade[1], "weight": grade[2],"date": grade[3], "details": grade[4]}
             for grade in grades
         ]
         return jsonify({"success": True, "grades": grades_list}), 200

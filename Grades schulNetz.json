@@ -434,7 +434,7 @@
       {
         "date": "03.06.2024",
         "name": "Vorsingen",
-        "grade": "",
+        "grade": "5.5",
         "details": "",
         "weight": "1"
       },
@@ -560,6 +560,13 @@
         "grade": "",
         "details": "",
         "weight": "1"
+      },
+      {
+        "date": "03.06.2024",
+        "name": "Badminton Spielbeurteilung",
+        "grade": "4.75",
+        "details": "",
+        "weight": "2"
       }
     ],
     "Subjekt 14": [

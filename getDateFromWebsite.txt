@@ -78,11 +78,6 @@ function groupElementsIntoObject(array) {
 const grades = groupElementsIntoObject(getValues());
 const subjects = getSubjectName();
 
-console.log("Das in die tabelle names 'values' eintragen indem du rechtscklickst und 'copy object' auswählst:");
-console.log(grades);
-console.log("Das in die tabelle names 'subjekts' eintragen indem du rechtscklickst und 'copy object' auswählst:");
-console.log(subjects);
-
 const combinedData = {
     subjects,
     grades
@@ -95,7 +90,7 @@ var blob = new Blob([jsonString], { type: "application/json" });
 
 // Create a link element to download the Blob
 var link = document.createElement("a");
-link.download = "grades.json"; // Set the filename
+link.download = "Grades schulNetz.json"; // Set the filename
 link.href = window.URL.createObjectURL(blob);
 
 // Simulate clicking the link to trigger download

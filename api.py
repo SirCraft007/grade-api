@@ -1,7 +1,10 @@
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, jsonify, request, abort, current_app
 from config import ADMIN_API_KEYS, VALID_API_KEYS
 import sqlite3
+import datetime
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
 
 api_routes = Blueprint("api_routes", __name__)
 
@@ -9,57 +12,49 @@ api_routes = Blueprint("api_routes", __name__)
 db = sqlite3.connect("Grades.db", check_same_thread=False)
 cursor = db.cursor()
 
+
 # Function to get the name of a subject based on its ID
-def get_subject_name(subject_id):
-    cursor.execute("SELECT name FROM subjects WHERE id=?", (subject_id,))
+def get_subject_name(current_user, subject_id):
+    cursor.execute(
+        "SELECT name FROM subjects WHERE id=? AND user_id=?",
+        (subject_id, current_user["id"]),
+    )
     subject = cursor.fetchone()
     if subject:
         return subject[0]
     else:
         return None
 
-# Decorator function to require an API key for accessing routes
-def require_api_key(f):
+
+def token_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Check if 'x-api-key' is in the request headers
-        if "x-api-key" not in request.headers:
-            abort(401)  # Unauthorized access
+    def decorated(*args, **kwargs):
+        token = request.headers.get("x-access-token")
+        if not token:
+            return jsonify({"message": "Token is missing"}), 403
 
-        # Check if the provided API key is valid
-        api_key = request.headers.get("x-api-key")
-        if api_key not in VALID_API_KEYS and api_key not in ADMIN_API_KEYS:
-            abort(403)  # Forbidden access
+        try:
+            data = jwt.decode(
+                token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+            )
+            current_user = {"username": data["username"], "id": data["id"]}
+        except:
+            return jsonify({"message": "Token is invalid or expired"}), 403
 
-        return f(*args, **kwargs)
+        return f(current_user, *args, **kwargs)
 
-    return decorated_function
+    return decorated
 
-# Decorator function to require an admin API key for accessing routes
-def require_admin_key(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Check if 'x-api-key' is in the request headers
-        if "x-api-key" not in request.headers:
-            abort(401)  # Unauthorized access
-
-        # Check if the provided API key is valid
-        api_key = request.headers.get("x-api-key")
-        if api_key not in ADMIN_API_KEYS:
-            abort(403)  # Forbidden access
-
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 # Function to update the average, points, and number of exams for each subject
-def update_subjects():
+def update_subjects(current_user):
     cursor.execute("SELECT id, name FROM subjects")
     subjects = cursor.fetchall()
     for subject in subjects:
         subject_id = subject[0]
         cursor.execute(
-            "SELECT grade, weight FROM grades WHERE subject_id=?", (subject_id,)
+            "SELECT grade, weight FROM grades WHERE subject_id=? AND user_id=?",
+            (subject_id, current_user["id"]),
         )
         grades = cursor.fetchall()
         val = 0
@@ -72,7 +67,7 @@ def update_subjects():
                 continue
         average = round(val / sumer if sumer != 0 else 0, 3)
         num_exams = len(grades) if len(grades) != 0 else 0
-        if average > 4: 
+        if average > 4:
             points = round(average - 4, 3)
         elif average == 0:
             points = 0
@@ -87,10 +82,11 @@ def update_subjects():
                 subject_id,
             ),
         )
-    update_main()
+    update_main(current_user)
+
 
 # Function to update the total average, total points, and total number of exams in the main table
-def update_main():
+def update_main(current_user):
     cursor.execute("SELECT average,points,name,num_exams,weight FROM subjects")
     subjects = cursor.fetchall()
     val = 0
@@ -106,24 +102,26 @@ def update_main():
     total_average = round(val / sumer if sumer != 0 else 0, 3)
     num_exams = sum([subject[3] for subject in subjects])
     cursor.execute(
-        "UPDATE main SET total_average=?, total_points=?, total_exams=? WHERE id=1",
+        "UPDATE main SET total_average=?, total_points=?, total_exams=? WHERE user_id=?",
         (
             total_average,
             points,
             num_exams,
+            current_user["id"],
         ),
     )
 
+
 # Route to get information about a specific subject
 @api_routes.route("/subjects/<int:subject_id>", methods=["GET"])
-@require_api_key
-def get_subject(subject_id):
+@token_required
+def get_subject(current_user, subject_id):
     if not subject_id:
         return jsonify({"success": False, "message": "Subject ID is required"}), 400
     try:
         cursor.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=?",
-            (subject_id,),
+            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=? AND user_id=?",
+            (subject_id, current_user["id"]),
         )
         subject = cursor.fetchone()
         if not subject:
@@ -136,7 +134,10 @@ def get_subject(subject_id):
                 ),
                 404,
             )
-        cursor.execute("SELECT id FROM grades WHERE subject_id=?", (subject_id,))
+        cursor.execute(
+            "SELECT id FROM grades WHERE subject_id=? AND user_id=?",
+            (subject_id, current_user["id"]),
+        )
         grade_ids = cursor.fetchall()
         grade_ids_list = [grade_id[0] for grade_id in grade_ids]
         subject_list = {
@@ -151,10 +152,11 @@ def get_subject(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to add a new subject
 @api_routes.route("/subjects", methods=["POST"])
-@require_admin_key
-def add_subject():
+@token_required
+def add_subject(current_user):
     try:
         data = request.get_json()
         name = data.get("name")
@@ -164,15 +166,19 @@ def add_subject():
             weight = 1
 
         cursor.execute(
-            "INSERT INTO subjects (name, weight) VALUES (?,?)",
+            "INSERT INTO subjects (name, weight, user_id) VALUES (?,?,?)",
             (
                 name,
                 weight,
+                current_user["id"],
             ),
         )
-        cursor.execute("SELECT id FROM subjects WHERE name=?", (name,))
+        cursor.execute(
+            "SELECT id FROM subjects WHERE name=? AND user_id=?",
+            (name, current_user["id"]),
+        )
         subject_id = cursor.fetchone()[0]
-        update_subjects()
+        update_subjects(current_user)
         db.commit()
         return (
             jsonify(
@@ -187,22 +193,26 @@ def add_subject():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to update an existing subject
 @api_routes.route("/subjects/<int:subject_id>", methods=["PUT"])
-@require_admin_key
-def update_subject(subject_id):
+@token_required
+def update_subject(current_user, subject_id):
     try:
         data = request.get_json()
         name = data.get("name")
         weight = data.get("weight")
         if weight is not None:
             cursor.execute(
-                "UPDATE subjects SET name=?, weight=? WHERE id=?",
-                (name, weight, subject_id),
+                "UPDATE subjects SET name=?, weight=? WHERE id=? AND user_id=?",
+                (name, weight, subject_id, current_user["id"]),
             )
         else:
-            cursor.execute("UPDATE subjects SET name=? WHERE id=?", (name, subject_id))
-        update_subjects()
+            cursor.execute(
+                "UPDATE subjects SET name=? WHERE id=? AND user_id=?",
+                (name, subject_id, current_user["id"]),
+            )
+        update_subjects(current_user)
         db.commit()
         return (
             jsonify({"success": True, "message": "Subject updated successfully"}),
@@ -211,13 +221,17 @@ def update_subject(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to delete a subject
 @api_routes.route("/subjects/<int:subject_id>", methods=["DELETE"])
-@require_admin_key
-def delete_subject(subject_id):
+@token_required
+def delete_subject(current_user, subject_id):
     try:
-        cursor.execute("DELETE FROM subjects WHERE id=?", (subject_id,))
-        update_subjects()
+        cursor.execute(
+            "DELETE FROM subjects WHERE id=? AND user_id=?",
+            (subject_id, current_user["id"]),
+        )
+        update_subjects(current_user)
         db.commit()
         return (
             jsonify({"success": True, "message": "Subject deleted successfully"}),
@@ -226,14 +240,15 @@ def delete_subject(subject_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to get information about a specific grade
 @api_routes.route("/grades/<int:grade_id>", methods=["GET"])
-@require_api_key
-def get_grade(grade_id):
+@token_required
+def get_grade(current_user, grade_id):
     try:
         cursor.execute(
-            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=?",
-            (grade_id,),
+            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=? AND user_id=?",
+            (grade_id, current_user["id"]),
         )
         grade = cursor.fetchone()
         grade_list = {
@@ -243,35 +258,43 @@ def get_grade(grade_id):
             "weight": grade[3],
             "date": grade[4],
             "details": grade[5],
-            "subject": get_subject_name(grade[6]),
+            "subject": get_subject_name(grade[6], current_user),
         }
         return jsonify({"success": True, "grade": grade_list}), 200
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to get grades for a specific subject
 @api_routes.route("/subjects/<int:subject_id>/grades", methods=["GET"])
-@require_api_key
-def subject_grade(subject_id):
+@token_required
+def subject_grade(current_user, subject_id):
     try:
         cursor.execute(
-            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=?",
-            (subject_id,),
+            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=? AND user_id=?",
+            (subject_id, current_user["id"]),
         )
         grades = cursor.fetchall()
         grades_list = [
-            {"id": grade[0], "grade": grade[1], "weight": grade[2],"date": grade[3], "details": grade[4]}
+            {
+                "id": grade[0],
+                "grade": grade[1],
+                "weight": grade[2],
+                "date": grade[3],
+                "details": grade[4],
+            }
             for grade in grades
         ]
         return jsonify({"success": True, "grades": grades_list}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to add a new grade
 @api_routes.route("/grades", methods=["POST"])
-@require_admin_key
-def add_grade():
+@token_required
+def add_grade(current_user):
     try:
         data = request.get_json()
         date = data.get("date")
@@ -282,13 +305,13 @@ def add_grade():
         subject_id = data.get("subject_id")
 
         cursor.execute(
-            "INSERT INTO grades (date, name, grade, weight, details, subject_id) VALUES (?,?, ?, ?, ?, ?)",
-            (date, name, grade, weight, details, subject_id),
+            "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (?,?, ?, ?, ?, ?, ?)",
+            (date, name, grade, weight, details, subject_id, current_user["id"]),
         )
 
         cursor.execute("SELECT id FROM grades WHERE name=?", (name,))
         grade_id = cursor.fetchone()[0]
-        update_subjects()
+        update_subjects(current_user)
         db.commit()
         return (
             jsonify(
@@ -303,10 +326,11 @@ def add_grade():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to update an existing grade
 @api_routes.route("/grades/<int:grade_id>", methods=["PUT"])
-@require_admin_key
-def update_grade(grade_id):
+@token_required
+def update_grade(current_user, grade_id):
     try:
         data = request.get_json()
 
@@ -325,10 +349,10 @@ def update_grade(grade_id):
         update_values = tuple(data.values())
         update_values += (grade_id,)
 
-        sql = f"UPDATE grades SET {update_columns} WHERE id = ?"
-        cursor.execute(sql, update_values)
+        sql = f"UPDATE grades SET {update_columns} WHERE id = ? and user_id=?"
+        cursor.execute(sql, update_values, current_user["id"])
 
-        update_subjects()
+        update_subjects(current_user)
         db.commit()
         return (
             jsonify({"success": True, "message": "Grade updated successfully"}),
@@ -337,24 +361,32 @@ def update_grade(grade_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to delete a grade
 @api_routes.route("/grades/<int:grade_id>", methods=["DELETE"])
-@require_admin_key
-def delete_grade(grade_id):
+@token_required
+def delete_grade(current_user, grade_id):
     try:
-        cursor.execute("DELETE FROM grades WHERE id=?", (grade_id,))
-        update_subjects()
+        cursor.execute(
+            "DELETE FROM grades WHERE id=? AND user_id=?",
+            (grade_id, current_user["id"]),
+        )
+        update_subjects(current_user)
         db.commit()
         return jsonify({"success": True, "message": "Grade deleted successfully"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # Route to get information about all subjects
 @api_routes.route("/subjects", methods=["GET"])
-@require_api_key
-def get_subjects():
+@token_required
+def get_subjects(current_user):
     try:
-        cursor.execute("SELECT id, name, average, points, num_exams FROM subjects")
+        cursor.execute(
+            "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=?",
+            (current_user["id"],),
+        )
         subjects = cursor.fetchall()
         subjects_list = [
             {
@@ -370,3 +402,44 @@ def get_subjects():
         return jsonify({"success": True, "subjects": subjects_list}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_routes.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
+    cursor.execute(
+        "INSERT INTO users (username, password) VALUES (?, ?)",
+        (username, hashed_password),
+    )
+    return jsonify({"message": "User registered successfully"}), 201
+
+
+@api_routes.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    cursor.execute(
+        "SELECT username, password, id FROM users WHERE username = ?", (username,)
+    )
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[1], password):
+        token = jwt.encode(
+            {
+                "username": username,
+                "exp": datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(hours=24),
+                "id": user[2],
+            },
+            current_app.config["SECRET_KEY"],
+        )
+
+        return jsonify({"token": token, "id": user[2]}), 200
+    else:
+        return jsonify({"message": "Invalid credentials"}), 401

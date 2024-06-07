@@ -1,12 +1,17 @@
 import sqlite3
 import json
+from werkzeug.security import generate_password_hash, check_password_hash
+from config import VALID_API_KEYS, ADMIN_API_KEYS
 
 with open("Grades schulNetz.json", "r") as file:
     data = json.load(file)
 
 grades = data["grades"]
 subjects = data["subjects"]
-nograde_index = [subjects.index("Web of Things & Robotik")+1,subjects.index("Grundlagenfach Sologesang")+1]
+nograde_index = [
+    subjects.index("Web of Things & Robotik") + 1,
+    subjects.index("Grundlagenfach Sologesang") + 1,
+]
 db = sqlite3.connect("Grades.db")
 cursor = db.cursor()
 
@@ -14,6 +19,16 @@ cursor = db.cursor()
 cursor.execute("DROP TABLE IF EXISTS subjects;")
 cursor.execute("DROP TABLE IF EXISTS grades;")
 cursor.execute("DROP TABLE IF EXISTS main;")
+cursor.execute("DROP TABLE IF EXISTS users;")
+
+cursor.execute(
+    """CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+        );
+        """
+)
 
 # Create the subjects table
 cursor.execute(
@@ -24,7 +39,9 @@ CREATE TABLE IF NOT EXISTS subjects (
     average REAL,
     points INTEGER,
     num_exams INTEGER,
-    weight INTEGER DEFAULT 1
+    weight INTEGER DEFAULT 1,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );
 """
 )
@@ -39,7 +56,9 @@ CREATE TABLE IF NOT EXISTS grades (
     grade INTEGER,
     details TEXT,
     weight INTEGER,
+    user_id INTEGER NOT NULL,
     subject_id INTEGER NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(subject_id) REFERENCES subjects(id)
 );
 """
@@ -51,26 +70,39 @@ CREATE TABLE IF NOT EXISTS main (
     last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
     total_average REAL,
     total_points INTEGER,
-    total_exams INTEGER
+    total_exams INTEGER,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );
 """
 )
-add=0
+password = "admin"
+hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
+
+cursor.execute(
+    "INSERT INTO users (username, password) VALUES ('admin', ?)",
+    (
+        hashed_password,
+    ),
+)
+add = 0
+admin_id = cursor.lastrowid
 # Insert data into grades table
 for id, element in enumerate(grades.values(), start=1):
-    if (id+add) in nograde_index:
-        add+=1
-        
+    if (id + add) in nograde_index:
+        add += 1
+
     for grade in element:
         cursor.execute(
-            "INSERT INTO grades (date, name, grade, details, weight, subject_id) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 grade["date"],
                 grade["name"],
                 grade["grade"],
                 grade["details"],
                 grade["weight"],
-                id+add,
+                id + add,
+                admin_id,
             ),
         )
 
@@ -90,7 +122,7 @@ for id, element in enumerate(subjects, start=1):
         weight = 0
     elif element == "Musik":
         weight = 0.5
-    
+
     for grade in grades:
         if grade[0] != "":
             val += grade[0] * grade[1]
@@ -105,16 +137,16 @@ for id, element in enumerate(subjects, start=1):
         points = 0
     else:
         points = round((average - 4) * 2, 3)
-        
 
     cursor.execute(
-        "INSERT INTO subjects (name, average, points, num_exams,weight) VALUES (?, ?, ?, ?,?)",
+        "INSERT INTO subjects (name, average, points, num_exams,weight, user_id) VALUES (?, ?, ?, ?,?,?)",
         (
             element,
             average,
             points,
             num_exams,
             weight,
+            admin_id,
         ),
     )
 
@@ -125,17 +157,17 @@ sumer = 0
 points = 0
 for subject in subjects:
     if subject[2] == "Grundlagenfach Sologesang":
-        val += 5*subject[4]
+        val += 5 * subject[4]
     else:
-        val += subject[0]*subject[4]
-    sumer += 1*subject[4]
-    points += subject[1]*subject[4]
+        val += subject[0] * subject[4]
+    sumer += 1 * subject[4]
+    points += subject[1] * subject[4]
 total_average = round(val / sumer if sumer != 0 else 0, 3)
 num_exams = sum([subject[3] for subject in subjects])
 
 cursor.execute(
-    "INSERT INTO main (total_average, total_points, total_exams) VALUES (?, ?, ?)",
-    (total_average, points, num_exams),
+    "INSERT INTO main (total_average, total_points, total_exams, user_id) VALUES (?, ?, ?, ?)",
+    (total_average, points, num_exams, admin_id),
 )
 
 # Commit the transaction

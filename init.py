@@ -12,7 +12,7 @@ nograde_index = [
     subjects.index("Web of Things & Robotik") + 1,
     subjects.index("Grundlagenfach Sologesang") + 1,
 ]
-db = sqlite3.connect("Grades.db")
+db = sqlite3.connect("data/Grades.db")
 cursor = db.cursor()
 
 # Drop the tables if they exist

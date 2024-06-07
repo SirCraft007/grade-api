@@ -9,7 +9,7 @@ import jwt
 api_routes = Blueprint("api_routes", __name__)
 
 # Connect to the database
-db = sqlite3.connect("Grades.db", check_same_thread=False)
+db = sqlite3.connect("data/Grades.db", check_same_thread=False)
 cursor = db.cursor()
 
 

@@ -18,14 +18,18 @@ cursor = db.cursor()
 # Drop the tables if they exist
 cursor.execute("DROP TABLE IF EXISTS subjects;")
 cursor.execute("DROP TABLE IF EXISTS grades;")
-cursor.execute("DROP TABLE IF EXISTS main;")
 cursor.execute("DROP TABLE IF EXISTS users;")
 
 cursor.execute(
     """CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
         username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        total_average REAL,
+        total_points INTEGER,
+        total_exams INTEGER,
+        schulnetz BOOLEAN DEFAULT FALSE
         );
         """
 )
@@ -63,27 +67,12 @@ CREATE TABLE IF NOT EXISTS grades (
 );
 """
 )
-cursor.execute(
-    """
-CREATE TABLE IF NOT EXISTS main (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
-    total_average REAL,
-    total_points INTEGER,
-    total_exams INTEGER,
-    user_id INTEGER NOT NULL,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-);
-"""
-)
 password = "admin"
 hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
 cursor.execute(
     "INSERT INTO users (username, password) VALUES ('admin', ?)",
-    (
-        hashed_password,
-    ),
+    (hashed_password,),
 )
 add = 0
 admin_id = cursor.lastrowid
@@ -106,10 +95,28 @@ for id, element in enumerate(grades.values(), start=1):
             ),
         )
 
+
+# Get the place of an item from grades.values()
+gesang_id = list(subjects).index("Grundlagenfach Sologesang")
+cursor.execute(
+    "INSERT INTO grades (date, name, grade,details, weight, subject_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    (
+        "20.01.2024",
+        "Gesang",
+        "5",
+        "",
+        "1",
+        gesang_id,
+        admin_id,
+    ),
+)
 # Insert data into subjects table
 for id, element in enumerate(subjects, start=1):
 
-    cursor.execute("SELECT grade, weight FROM grades WHERE subject_id=?", (id,))
+    cursor.execute(
+        "SELECT grade, weight FROM grades WHERE subject_id=? AND user_id=?",
+        (id, admin_id),
+    )
     grades = cursor.fetchall()
     val = 0
     sumer = 0
@@ -150,23 +157,23 @@ for id, element in enumerate(subjects, start=1):
         ),
     )
 
-cursor.execute("SELECT average,points,name,num_exams,weight FROM subjects")
+cursor.execute(
+    "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=?",
+    (admin_id,),
+)
 subjects = cursor.fetchall()
 val = 0
 sumer = 0
 points = 0
 for subject in subjects:
-    if subject[2] == "Grundlagenfach Sologesang":
-        val += 5 * subject[4]
-    else:
-        val += subject[0] * subject[4]
+    val += subject[0] * subject[4]
     sumer += 1 * subject[4]
     points += subject[1] * subject[4]
 total_average = round(val / sumer if sumer != 0 else 0, 3)
 num_exams = sum([subject[3] for subject in subjects])
 
 cursor.execute(
-    "INSERT INTO main (total_average, total_points, total_exams, user_id) VALUES (?, ?, ?, ?)",
+    "UPDATE users SET total_average=?, total_points=?, total_exams=?, schulnetz=TRUE WHERE id=?",
     (total_average, points, num_exams, admin_id),
 )
 

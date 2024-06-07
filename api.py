@@ -48,7 +48,7 @@ def token_required(f):
 
 # Function to update the average, points, and number of exams for each subject
 def update_subjects(current_user):
-    cursor.execute("SELECT id, name FROM subjects")
+    cursor.execute("SELECT id, name FROM subjects WHERE user_id=?", (current_user["id"],))
     subjects = cursor.fetchall()
     for subject in subjects:
         subject_id = subject[0]
@@ -87,22 +87,19 @@ def update_subjects(current_user):
 
 # Function to update the total average, total points, and total number of exams in the main table
 def update_main(current_user):
-    cursor.execute("SELECT average,points,name,num_exams,weight FROM subjects")
+    cursor.execute("SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=?", (current_user["id"],))
     subjects = cursor.fetchall()
     val = 0
     sumer = 0
     points = 0
     for subject in subjects:
-        if subject[2] == "Grundlagenfach Sologesang":
-            val += 5 * subject[4]
-        else:
-            val += subject[0] * subject[4]
+        val += subject[0] * subject[4]
         sumer += 1 * subject[4]
         points += subject[1] * subject[4]
     total_average = round(val / sumer if sumer != 0 else 0, 3)
     num_exams = sum([subject[3] for subject in subjects])
     cursor.execute(
-        "UPDATE main SET total_average=?, total_points=?, total_exams=? WHERE user_id=?",
+        "UPDATE users SET total_average=?, total_points=?, total_exams=? WHERE id=?",
         (
             total_average,
             points,

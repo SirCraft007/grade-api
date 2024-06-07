@@ -28,8 +28,7 @@ cursor.execute(
         password TEXT NOT NULL,
         total_average REAL,
         total_points INTEGER,
-        total_exams INTEGER,
-        schulnetz BOOLEAN DEFAULT FALSE
+        total_exams INTEGER
         );
         """
 )
@@ -71,7 +70,7 @@ password = "admin"
 hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
 cursor.execute(
-    "INSERT INTO users (username, password) VALUES ('admin', ?)",
+    "INSERT INTO users (username, password) VALUES ('Serafino', ?)",
     (hashed_password,),
 )
 add = 0
@@ -173,7 +172,7 @@ total_average = round(val / sumer if sumer != 0 else 0, 3)
 num_exams = sum([subject[3] for subject in subjects])
 
 cursor.execute(
-    "UPDATE users SET total_average=?, total_points=?, total_exams=?, schulnetz=TRUE WHERE id=?",
+    "UPDATE users SET total_average=?, total_points=?, total_exams=? WHERE id=?",
     (total_average, points, num_exams, admin_id),
 )
 

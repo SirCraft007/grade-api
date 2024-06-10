@@ -3,17 +3,19 @@ import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-
+import os
 import mysql.connector
+from dotenv import load_dotenv
+load_dotenv()
 
 api_routes = Blueprint("api_routes", __name__)
 
 # Connect to the database
 db = mysql.connector.connect(
-    host="**Reddacted**",
-    user="**Reddacted**",
-    password="**Reddacted**",
-    database="**Reddacted**",
+    host=os.getenv("HOST"),
+    user=os.getenv("USER"),
+    passwd=os.getenv("PASSWORD"),
+    database=os.getenv("DATABASE"),
 )
 cursor = db.cursor()
 

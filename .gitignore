@@ -19,3 +19,7 @@ env.bak/
 venv.bak/ 
 
 .DS_Store
+.vscode
+vscode/*
+vscode/settings.json
+.vscode/settings.json

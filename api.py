@@ -3,19 +3,10 @@ import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-
-import mysql.connector
+from config import db, cursor
 
 api_routes = Blueprint("api_routes", __name__)
 
-# Connect to the database
-db = mysql.connector.connect(
-    host="jungwac1.mysql.db.hostpoint.ch",
-    user="jungwac1_DataB",
-    password="3!%;+dEe1j",
-    database="jungwac1_data",
-)
-cursor = db.cursor()
 
 
 # Function to get the name of a subject based on its ID

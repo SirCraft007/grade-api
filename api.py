@@ -1,22 +1,26 @@
 from flask import Blueprint, jsonify, request, abort, current_app
-from config import ADMIN_API_KEYS, VALID_API_KEYS
-import sqlite3
 import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
+import mysql.connector
 
 api_routes = Blueprint("api_routes", __name__)
 
 # Connect to the database
-db = sqlite3.connect("tmp/Grades.db", check_same_thread=False)
+db = mysql.connector.connect(
+    host="**Reddacted**",
+    user="**Reddacted**",
+    password="**Reddacted**",
+    database="**Reddacted**",
+)
 cursor = db.cursor()
 
 
 # Function to get the name of a subject based on its ID
 def get_subject_name(subject_id, current_user):
     cursor.execute(
-        "SELECT name FROM subjects WHERE id=? AND user_id=?",
+        "SELECT name FROM subjects WHERE id=%s AND user_id=%s",
         (subject_id, current_user["id"]),
     )
     subject = cursor.fetchone()
@@ -49,13 +53,13 @@ def token_required(f):
 # Function to update the average, points, and number of exams for each subject
 def update_subjects(current_user):
     cursor.execute(
-        "SELECT id, name FROM subjects WHERE user_id=?", (current_user["id"],)
+        "SELECT id, name FROM subjects WHERE user_id=%s", (current_user["id"],)
     )
     subjects = cursor.fetchall()
     for subject in subjects:
         subject_id = subject[0]
         cursor.execute(
-            "SELECT grade, weight FROM grades WHERE subject_id=? AND user_id=?",
+            "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
         grades = cursor.fetchall()
@@ -76,7 +80,7 @@ def update_subjects(current_user):
         else:
             points = round((average - 4) * 2, 3)
         cursor.execute(
-            "UPDATE subjects SET average=? , points=?, num_exams=? WHERE id=?",
+            "UPDATE subjects SET average=%s , points=%s, num_exams=%s WHERE id=%s",
             (
                 average,
                 points,
@@ -90,7 +94,7 @@ def update_subjects(current_user):
 # Function to update the total average, total points, and total number of exams in the main table
 def update_main(current_user):
     cursor.execute(
-        "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=?",
+        "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=%s",
         (current_user["id"],),
     )
     subjects = cursor.fetchall()
@@ -104,7 +108,7 @@ def update_main(current_user):
     total_average = round(val / sumer if sumer != 0 else 0, 3)
     num_exams = sum([subject[3] for subject in subjects])
     cursor.execute(
-        "UPDATE users SET total_average=?, total_points=?, total_exams=? WHERE id=?",
+        "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
         (
             total_average,
             points,
@@ -122,7 +126,7 @@ def get_subject(current_user, subject_id):
         return jsonify({"success": False, "message": "Subject ID is required"}), 400
     try:
         cursor.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=? AND user_id=?",
+            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
         subject = cursor.fetchone()
@@ -137,7 +141,7 @@ def get_subject(current_user, subject_id):
                 404,
             )
         cursor.execute(
-            "SELECT id FROM grades WHERE subject_id=? AND user_id=?",
+            "SELECT id FROM grades WHERE subject_id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
         grade_ids = cursor.fetchall()
@@ -168,7 +172,7 @@ def add_subject(current_user):
             weight = 1
 
         cursor.execute(
-            "INSERT INTO subjects (name, weight, user_id) VALUES (?,?,?)",
+            "INSERT INTO subjects (name, weight, user_id) VALUES (%s,%s,%s)",
             (
                 name,
                 weight,
@@ -176,7 +180,7 @@ def add_subject(current_user):
             ),
         )
         cursor.execute(
-            "SELECT id FROM subjects WHERE name=? AND user_id=?",
+            "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
             (name, current_user["id"]),
         )
         subject_id = cursor.fetchone()[0]
@@ -206,12 +210,12 @@ def update_subject(current_user, subject_id):
         weight = data.get("weight")
         if weight is not None:
             cursor.execute(
-                "UPDATE subjects SET name=?, weight=? WHERE id=? AND user_id=?",
+                "UPDATE subjects SET name=%s, weight=%s WHERE id=%s AND user_id=%s",
                 (name, weight, subject_id, current_user["id"]),
             )
         else:
             cursor.execute(
-                "UPDATE subjects SET name=? WHERE id=? AND user_id=?",
+                "UPDATE subjects SET name=%s WHERE id=%s AND user_id=%s",
                 (name, subject_id, current_user["id"]),
             )
         update_subjects(current_user)
@@ -230,7 +234,7 @@ def update_subject(current_user, subject_id):
 def delete_subject(current_user, subject_id):
     try:
         cursor.execute(
-            "DELETE FROM subjects WHERE id=? AND user_id=?",
+            "DELETE FROM subjects WHERE id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
         update_subjects(current_user)
@@ -249,7 +253,7 @@ def delete_subject(current_user, subject_id):
 def get_grade(current_user, grade_id):
     try:
         cursor.execute(
-            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=? AND user_id=?",
+            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=%s AND user_id=%s",
             (grade_id, current_user["id"]),
         )
         grade = cursor.fetchone()
@@ -274,7 +278,7 @@ def get_grade(current_user, grade_id):
 def subject_grade(current_user, subject_id):
     try:
         cursor.execute(
-            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=? AND user_id=?",
+            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
         grades = cursor.fetchall()
@@ -307,11 +311,11 @@ def add_grade(current_user):
         subject_id = data.get("subject_id")
 
         cursor.execute(
-            "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (?,?, ?, ?, ?, ?, ?)",
+            "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (%s,%s, %s, %s, %s, %s, %s)",
             (date, name, grade, weight, details, subject_id, current_user["id"]),
         )
 
-        cursor.execute("SELECT id FROM grades WHERE name=?", (name,))
+        cursor.execute("SELECT id FROM grades WHERE name=%s", (name,))
         grade_id = cursor.fetchone()[0]
         update_subjects(current_user)
         db.commit()
@@ -334,7 +338,7 @@ def add_grade(current_user):
 def get_grades(current_user):
     try:
         cursor.execute(
-            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE user_id=?",
+            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE user_id=%s",
             (current_user["id"],),
         )
         grades = cursor.fetchall()
@@ -374,10 +378,10 @@ def update_grade(current_user, grade_id):
                     400,
                 )
 
-        update_columns = ", ".join(f"{key} = ?" for key in data.keys())
+        update_columns = ", ".join(f"{key} = %s" for key in data.keys())
         update_values = tuple(data.values())
         update_values += (grade_id, current_user["id"])
-        sql = f"UPDATE grades SET {update_columns} WHERE id = ? and user_id=?"
+        sql = f"UPDATE grades SET {update_columns} WHERE id = %s and user_id=%s"
         cursor.execute(sql, update_values)
 
         update_subjects(current_user)
@@ -396,7 +400,7 @@ def update_grade(current_user, grade_id):
 def delete_grade(current_user, grade_id):
     try:
         cursor.execute(
-            "DELETE FROM grades WHERE id=? AND user_id=?",
+            "DELETE FROM grades WHERE id=%s AND user_id=%s",
             (grade_id, current_user["id"]),
         )
         update_subjects(current_user)
@@ -412,7 +416,7 @@ def delete_grade(current_user, grade_id):
 def get_subjects(current_user):
     try:
         cursor.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=?",
+            "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=%s",
             (current_user["id"],),
         )
         subjects = cursor.fetchall()
@@ -437,7 +441,7 @@ def get_subjects(current_user):
 def get_user(current_user):
     try:
         cursor.execute(
-            "SELECT id, username, total_average, total_points, total_exams FROM users WHERE id=?",
+            "SELECT id, username, total_average, total_points, total_exams FROM users WHERE id=%s",
             (current_user["id"],),
         )
         user = cursor.fetchone()
@@ -460,7 +464,7 @@ def update_password(current_user):
     try:
         old_password = data.get("old_password")
         new_password = data.get("new_password")
-        cursor.execute("SELECT password FROM users WHERE id = ?", (current_user["id"],))
+        cursor.execute("SELECT password FROM users WHERE id = %s", (current_user["id"],))
         user = cursor.fetchone()
 
         if user and check_password_hash(user[0], old_password):
@@ -468,7 +472,7 @@ def update_password(current_user):
                 new_password, method="pbkdf2:sha256"
             )
             cursor.execute(
-                "UPDATE users SET password=? WHERE id=?",
+                "UPDATE users SET password=%s WHERE id=%s",
                 (hashed_password, current_user["id"]),
             )
             cursor.commit()
@@ -490,7 +494,7 @@ def update_username(current_user):
         username = data.get("username")
 
         cursor.execute(
-            "UPDATE users SET username=? WHERE id=?",
+            "UPDATE users SET username=%s WHERE id=%s",
             (username, current_user["id"]),
         )
         cursor.commit()
@@ -511,7 +515,7 @@ def register():
 
         hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
         cursor.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
+            "INSERT INTO users (username, password) VALUES (%s, %s)",
             (username, hashed_password),
         )
         cursor.commit()
@@ -531,7 +535,7 @@ def login():
         password = data.get("password")
 
         cursor.execute(
-            "SELECT username, password, id FROM users WHERE username = ?", (username,)
+            "SELECT username, password, id FROM users WHERE username = %s", (username,)
         )
         user = cursor.fetchone()
 

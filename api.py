@@ -3,6 +3,7 @@ import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
+
 import mysql.connector
 
 api_routes = Blueprint("api_routes", __name__)
@@ -35,7 +36,7 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = request.headers.get("x-access-token")
         if not token:
-            return jsonify({"message": "Token is missing"}), 403
+            return jsonify({"success": False,"message": "Token is missing"}), 403
 
         try:
             data = jwt.decode(
@@ -43,7 +44,7 @@ def token_required(f):
             )
             current_user = {"username": data["username"], "id": data["id"]}
         except:
-            return jsonify({"message": "Token is invalid or expired"}), 403
+            return jsonify({"success": False,"message": "Token is invalid or expired"}), 403
 
         return f(current_user, *args, **kwargs)
 

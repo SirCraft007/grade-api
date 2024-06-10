@@ -1,0 +1,18 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "jungwac1.mysql.db.hostpoint.ch",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "Grades",
+            "database": "jungwac1_data",
+            "username": "jungwac1_DataB",
+            "password": "3!%;+dEe1j"
+        }
+    ]
+}

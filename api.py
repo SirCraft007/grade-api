@@ -448,8 +448,8 @@ def get_user(current_user):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
-@api_routes.route("/user/update_password", methods=["POST"])
+# what method should this be?
+@api_routes.route("/user/update_password", methods=["PUT"])
 @token_required
 def update_password(current_user):
     data = request.get_json()
@@ -467,18 +467,24 @@ def update_password(current_user):
                 "UPDATE users SET password=%s WHERE id=%s",
                 (hashed_password, current_user["id"]),
             )
-            cursor.commit()
-            return (
-                jsonify({"success": False, "message": "Password updated successfully"}),
-                200,
+            db.commit()
+            token = jwt.encode(
+                {
+                    "username": current_user["username"],
+                    "exp": datetime.datetime.now(datetime.timezone.utc)
+                    + datetime.timedelta(hours=24),
+                    "id": user[2],
+                },
+                current_app.config["SECRET_KEY"],
             )
+            return jsonify({"success": True, "token": token, "id": user[2]}), 200
         else:
             return jsonify({"success": False, "message": "Invalid password"}), 401
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-@api_routes.route("/user/update_username", methods=["POST"])
+@api_routes.route("/user/update_username", methods=["PUT"])
 @token_required
 def update_username(current_user):
     data = request.get_json()
@@ -489,16 +495,16 @@ def update_username(current_user):
             "UPDATE users SET username=%s WHERE id=%s",
             (username, current_user["id"]),
         )
-        cursor.commit()
+        db.commit()
         return (
-            jsonify({"success": False, "message": "Username updated successfully"}),
+            jsonify({"success": True, "message": "Username updated successfully"}),
             200,
         )
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-@api_routes.route("/register", methods=["POST"])
+@api_routes.route("/register", methods=["PUT"])
 def register():
     data = request.get_json()
     try:
@@ -510,7 +516,7 @@ def register():
             "INSERT INTO users (username, password) VALUES (%s, %s)",
             (username, hashed_password),
         )
-        cursor.commit()
+        db.commit()
         return (
             jsonify({"success": True, "message": "User registered successfully"}),
             201,
@@ -545,5 +551,18 @@ def login():
             return jsonify({"success": True, "token": token, "id": user[2]}), 200
         else:
             return jsonify({"success": False, "message": "Invalid credentials"}), 401
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    
+@api_routes.route("/user/<int:user_id>", methods=["DELETE"])
+@token_required
+def delete_user(current_user, user_id):
+    try:
+        cursor.execute(
+            "DELETE FROM users WHERE id=%s AND user_id=%s",
+            (user_id, current_user["id"]),
+        )
+        db.commit()
+        return jsonify({"success": True, "message": "User deleted successfully"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

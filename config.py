@@ -1,10 +1,5 @@
 import os
 import mysql.connector
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
 
 # Regular API keys
 VALID_API_KEYS = [
@@ -18,10 +13,12 @@ ADMIN_API_KEYS = [
     "3d9a5cafeba42343dc1605c9004d9091fdc2a72a99c84bca0d4cc8c9ed2a483c",
 ]
 
+
 db = mysql.connector.connect(
-    host=os.environ.get("HOST"),
-    user=os.environ.get("USER"),
-    password=os.environ.get("PASSWORD"),
-    database=os.environ.get("DATABASE"),
+    host="jungwac1.mysql.db.hostpoint.ch",
+    user="jungwac1_DataB",
+    password="3!%;+dEe1j",
+    database="jungwac1_data",
 )
 cursor = db.cursor()
+

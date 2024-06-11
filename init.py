@@ -1,6 +1,6 @@
 import json
-import mysql.connector
 from werkzeug.security import generate_password_hash
+from config import db, cursor
 
 with open("Grades schulNetz.json", "r") as file:
     data = json.load(file)
@@ -11,14 +11,6 @@ nograde_index = [
     subjects.index("Web of Things & Robotik") + 1,
     subjects.index("Grundlagenfach Sologesang") + 1,
 ]
-db = mysql.connector.connect(
-    host="jungwac1.mysql.db.hostpoint.ch",
-    user="jungwac1_DataB",
-    password="3!%;+dEe1j",
-    database="jungwac1_data",
-)
-cursor = db.cursor()
-print("DB connected")
 
 # Drop the tables if they exist
 cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
@@ -37,7 +29,7 @@ cursor.execute(
         password TEXT NOT NULL,
         total_average REAL,
         total_points INT,
-        total_exams INT
+        total_subjects INT
         );
         """
 )
@@ -106,12 +98,16 @@ for id, element in enumerate(grades.values(), start=1):
         add += 1
 
     for grade in element:
+        if grade["grade"] == "":
+            grade_value = None
+        else:
+            grade_value = grade["grade"]
         cursor.execute(
             "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
             (
                 grade["date"],
                 grade["name"],
-                grade["grade"],
+                grade_value,
                 grade["details"],
                 grade["weight"],
                 id + add,
@@ -154,19 +150,19 @@ for id, element in enumerate(subjects, start=1):
         weight = 0.5
 
     for grade in grades:
-        if grade[0] != "":
+        if grade[0] != None and grade[0] != 0:
             val += grade[0] * grade[1]
             sumer += grade[1]
         else:
             continue
-    average = round(val / sumer if sumer != 0 else 0, 3)
-    num_exams = len(grades) if len(grades) != 0 else 0
-    if average > 4:
-        points = round(average - 4, 3)
-    elif average == 0:
-        points = 0
-    else:
-        points = round((average - 4) * 2, 3)
+        average = round(val / sumer if sumer != 0 else 0, 3)
+        num_exams = len(grades) if len(grades) != 0 else 0
+        if average > 4:
+            points = round(average - 4, 3)
+        elif average == 0:
+            points = 0
+        else:
+            points = round((average - 4) * 2, 3)
         cursor.execute(
             "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
             (
@@ -192,11 +188,11 @@ for subject in subjects:
         sumer += 1 * subject[4]
         points += subject[1] * subject[4]
 total_average = round(val / sumer if sumer != 0 else 0, 3)
-num_exams = sum([subject[3] for subject in subjects if subject[3] is not None])
+num_subjects = sum([subject[3] for subject in subjects if subject[3] is not None])
 
 cursor.execute(
-    "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
-    (total_average, points, num_exams, admin_id),
+    "UPDATE users SET total_average=%s, total_points=%s, total_subjects=%s WHERE id=%s",
+    (total_average, points, num_subjects, admin_id),
 )
 print("User completed")
 # Commit the transaction

@@ -10,4 +10,5 @@ MarkupSafe==2.1.5
 mysql-connector-python==8.4.0
 pycparser==2.22
 PyJWT==2.8.0
+python-dotenv==1.0.1
 Werkzeug==3.0.3

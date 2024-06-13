@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS subjects (
     average REAL,
     points INT,
     num_exams INT,
-    weight INT DEFAULT 1,
+    weight REAL DEFAULT 1,
     user_id INT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS grades (
     id INT PRIMARY KEY AUTO_INCREMENT,
     date TEXT NOT NULL,
     name TEXT NOT NULL,
-    grade INT,
+    grade FLOAT,
     details TEXT,
-    weight INT,
+    weight REAL DEFAULT 1,
     user_id INT NOT NULL,
     subject_id INT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id),
@@ -124,7 +124,6 @@ cursor.executemany(
 
 print("Grades created")
 update_queries = []
-
 for id, element in enumerate(subjects, start=1):
     cursor.execute(
         "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
@@ -147,8 +146,10 @@ for id, element in enumerate(subjects, start=1):
     average = round(val / sumer if sumer != 0 else 0, 3)
     num_exams = len(grades) if grades else 0
     points = round((average - 4) * 2, 3) if average > 4 else 0
-
-    update_queries.append((average, points, num_exams, weight, id))
+    if num_exams == 0:
+        update_queries.append((None, None, None, weight, id))
+    else:
+        update_queries.append((average, points, num_exams, weight, id))
 
 # Execute all updates at once
 cursor.executemany(
@@ -183,5 +184,6 @@ print("User completed")
 # Commit the transaction
 db.commit()
 print("Transaction completed")
+db.close()
 
 # Close the database

@@ -5,32 +5,34 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 from config import db, cursor
-import time
 
 api_routes = Blueprint("api_routes", __name__)
 
 
 def generate_jwt(user, password):
-
-    cursor.execute(
-        "SELECT username, password, id FROM users WHERE username = %s", (user,)
-    )
-    user_data = cursor.fetchone()
-    if check_password_hash(user_data[1], password):
-
-        token = jwt.encode(
-            {
-                "username": user_data[0],
-                "exp": datetime.datetime.now(datetime.timezone.utc)
-                + datetime.timedelta(hours=24),
-                "id": user_data[2],
-            },
-            current_app.config["SECRET_KEY"],
+    try:
+        cursor.execute(
+            "SELECT username, password, id FROM users WHERE username = %s", (user,)
         )
-        return token
-    else:
-        # Raise an exception for invalid username or password
-        raise ValueError("Invalid username or password")
+        user_data = cursor.fetchone()
+        if user_data and check_password_hash(user_data[1], password):
+            token = jwt.encode(
+                {
+                    "username": user_data[0],
+                    "exp": datetime.datetime.now(datetime.timezone.utc)
+                    + datetime.timedelta(hours=12),
+                    "id": user_data[2],
+                },
+                current_app.config["SECRET_KEY"],
+            )
+            return token
+        else:
+            # Raise an exception for invalid username or password
+            raise ValueError("Invalid username or password")
+    except (ExpiredSignatureError, InvalidTokenError) as e:
+        # Handle JWT errors here
+        print(e)
+        abort(401, "Token error")
 
 
 # Function to get the name of a subject based on its ID
@@ -91,7 +93,7 @@ def get_subject_id(subject_name, current_user):
                 (subject_name, current_user["id"]),
             )
             subject_id = cursor.lastrowid
-            new_grade=True
+            new_grade = True
 
         except Exception as e:
             raise ValueError(f"Error inserting subject: {e}")
@@ -203,7 +205,10 @@ def update_subjects(current_user):
         num_exams = len(grades) if grades else 0
         points = round((average - 4) * 2, 3) if average > 4 else 0
 
-        update_queries.append((average, points, num_exams, weight, id))
+        if num_exams == 0:
+            update_queries.append((None, None, None, weight, id))
+        else:
+            update_queries.append((average, points, num_exams, weight, id))
 
     # Execute all updates at once
     cursor.executemany(
@@ -440,29 +445,33 @@ def add_grade(current_user):
         if data.get("subject_id") is None:
             response = get_subject_id(data.get("subject_name"), current_user)
             subject_id = response["id"]
+
+            message = {
+                "success": True,
+                "message": (
+                    "New grade added successfully"
+                    if not response["new_grade"]
+                    else "New grade and new subject added successfully"
+                ),
+                "subjekt_id": response["id"] if response["new_grade"] else None,
+            }
         else:
             subject_id = data.get("subject_id")
+            message = {
+                "success": True,
+                "message": ("New grade added successfully"),
+            }
 
         cursor.execute(
             "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (%s,%s, %s, %s, %s, %s, %s)",
             (date, name, grade, weight, details, subject_id, current_user["id"]),
         )
         grade_id = cursor.lastrowid
+        message["id"] = grade_id
         update_subjects(current_user)
         db.commit()
         return (
-            jsonify(
-                {
-                    "success": True,
-                    "message": (
-                        "New grade added successfully"
-                        if not response["new_grade"]
-                        else "New grade and new subject added successfully"
-                    ),
-                    "id": grade_id,
-                    "subjekt_id": response["id"] if response["new_grade"] else None,
-                }
-            ),
+            jsonify(message),
             200,
         )
     except Exception as e:

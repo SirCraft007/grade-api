@@ -29,7 +29,7 @@ cursor.execute(
         password TEXT NOT NULL,
         total_average REAL,
         total_points INT,
-        total_subjects INT,
+        total_exams INT,
         admin BOOLEAN DEFAULT FALSE
         );
         """
@@ -84,56 +84,48 @@ cursor.execute(
 admin_id = cursor.lastrowid
 print("User created")
 # Insert data into grades table
-
-for id, element in enumerate(subjects, start=1):
-    cursor.execute(
-        "INSERT INTO subjects (name,user_id) VALUES (%s,%s)",
-        (
-            element,
-            admin_id,
-        ),
-    )
+values = [(element, admin_id) for element in subjects]
+cursor.executemany("INSERT INTO subjects (name, user_id) VALUES (%s, %s)", values)
 print("Subjects created")
+values = []
 add = 0
 for id, element in enumerate(grades.values(), start=1):
     if (id + add) in nograde_index:
         add += 1
-
-    for grade in element:
-        if grade["grade"] == "":
-            grade_value = None
-        else:
-            grade_value = grade["grade"]
-        cursor.execute(
-            "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+    values.extend(
+        [
             (
                 grade["date"],
                 grade["name"],
-                grade_value,
+                None if grade["grade"] == "" else grade["grade"],
                 grade["details"],
                 grade["weight"],
                 id + add,
                 admin_id,
-            ),
-        )
-# Get the place of an item from grades.values()
-gesang_id = list(subjects).index("Grundlagenfach Sologesang") + 1
-cursor.execute(
-    "INSERT INTO grades (date, name, grade,details, weight, subject_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            )
+            for grade in element
+        ]
+    )
+values.append(
     (
         "20.01.2024",
         "Gesang",
         "5",
         "",
         "1",
-        gesang_id,
+        list(subjects).index("Grundlagenfach Sologesang") + 1,
         admin_id,
-    ),
+    )
 )
-print("Grades created")
-# Insert data into subjects table
-for id, element in enumerate(subjects, start=1):
+cursor.executemany(
+    "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+    values,
+)
 
+print("Grades created")
+update_queries = []
+
+for id, element in enumerate(subjects, start=1):
     cursor.execute(
         "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
         (id, admin_id),
@@ -142,39 +134,30 @@ for id, element in enumerate(subjects, start=1):
     val = 0
     sumer = 0
     weight = 1
-    if element == "Web of Things & Robotik":
+    if element in ["Web of Things & Robotik", "Sport"]:
         weight = 0
-    elif element == "Grundlagenfach Sologesang":
-        weight = 0.5
-    elif element == "Sport":
-        weight = 0
-    elif element == "Musik":
+    elif element in ["Grundlagenfach Sologesang", "Musik"]:
         weight = 0.5
 
     for grade in grades:
-        if grade[0] != None and grade[0] != 0:
+        if grade[0] and grade[0] != 0:
             val += grade[0] * grade[1]
             sumer += grade[1]
-        else:
-            continue
-        average = round(val / sumer if sumer != 0 else 0, 3)
-        num_exams = len(grades) if len(grades) != 0 else 0
-        if average > 4:
-            points = round(average - 4, 3)
-        elif average == 0:
-            points = 0
-        else:
-            points = round((average - 4) * 2, 3)
-        cursor.execute(
-            "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
-            (
-                average,
-                points,
-                num_exams,
-                weight,
-                id,
-            ),
-        )
+
+    average = round(val / sumer if sumer != 0 else 0, 3)
+    num_exams = len(grades) if grades else 0
+    points = round((average - 4) * 2, 3) if average > 4 else 0
+
+    update_queries.append((average, points, num_exams, weight, id))
+
+# Execute all updates at once
+cursor.executemany(
+    "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
+    update_queries,
+)
+
+print("Subjects completed")
+
 print("Subjects completed")
 cursor.execute(
     "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=%s",
@@ -190,11 +173,11 @@ for subject in subjects:
         sumer += 1 * subject[4]
         points += subject[1] * subject[4]
 total_average = round(val / sumer if sumer != 0 else 0, 3)
-num_subjects = sum([subject[3] for subject in subjects if subject[3] is not None])
+total_exams = sum([subject[3] for subject in subjects if subject[3] is not None])
 
 cursor.execute(
-    "UPDATE users SET total_average=%s, total_points=%s, total_subjects=%s WHERE id=%s",
-    (total_average, points, num_subjects, admin_id),
+    "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
+    (total_average, points, total_exams, admin_id),
 )
 print("User completed")
 # Commit the transaction

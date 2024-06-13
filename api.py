@@ -46,22 +46,6 @@ def get_subject_name(subject_id, current_user):
         return "Unknown"
 
 
-def get_subject_chage(subject_name, current_user):
-    cursor.execute(
-        "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
-        (subject_name, current_user["id"]),
-    )
-    subject_id = cursor.fetchone()
-    if subject_id:
-        return subject_id[0]
-    else:
-        cursor.execute(
-            "INSERT INTO subjects (name, user_id) VALUES (%s, %s)",
-        )
-        subject_id = cursor.lastrowid
-        return subject_id
-
-
 def delete_user_data(user_id):
     try:
         cursor.execute(
@@ -86,10 +70,32 @@ def delete_user_data(user_id):
             "DELETE FROM users WHERE id=%s",
             (user_id,),
         )
-        db.commit()
         return f"User deleted successfully with {subject_count} subjects, {grade_count} grades"
     except Exception as e:
         raise ValueError(f"Error deleting user: {e}")
+
+
+def get_subject_id(subject_name, current_user):
+    cursor.execute(
+        "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
+        (subject_name, current_user["id"]),
+    )
+    new_grade = False
+    subject = cursor.fetchone()
+    if subject:
+        subject_id = subject[0]
+    else:
+        try:
+            cursor.execute(
+                "INSERT INTO subjects (name, user_id) VALUES (%s, %s)",
+                (subject_name, current_user["id"]),
+            )
+            subject_id = cursor.lastrowid
+            new_grade=True
+
+        except Exception as e:
+            raise ValueError(f"Error inserting subject: {e}")
+    return {"id": subject_id, "new_grade": new_grade}
 
 
 def token_required(f):
@@ -169,61 +175,67 @@ def admin_token_required(f):
 
 # Function to update the average, points, and number of exams for each subject
 def update_subjects(current_user):
+    update_queries = []
     cursor.execute(
         "SELECT id, name FROM subjects WHERE user_id=%s", (current_user["id"],)
     )
     subjects = cursor.fetchall()
-    for subject in subjects:
-        subject_id = subject[0]
+    for id, element in enumerate(subjects, start=1):
         cursor.execute(
             "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
-            (subject_id, current_user["id"]),
+            (id, current_user["id"]),
         )
         grades = cursor.fetchall()
         val = 0
         sumer = 0
+        weight = 1
+        if element in ["Web of Things & Robotik", "Sport"]:
+            weight = 0
+        elif element in ["Grundlagenfach Sologesang", "Musik"]:
+            weight = 0.5
+
         for grade in grades:
-            if grade[0] != "":
+            if grade[0] and grade[0] != 0:
                 val += grade[0] * grade[1]
                 sumer += grade[1]
-            else:
-                continue
+
         average = round(val / sumer if sumer != 0 else 0, 3)
-        num_exams = len(grades) if len(grades) != 0 else 0
-        if average > 4:
-            points = round(average - 4, 3)
-        elif average == 0:
-            points = 0
-        else:
-            points = round((average - 4) * 2, 3)
-        cursor.execute(
-            "UPDATE subjects SET average=%s , points=%s, num_exams=%s WHERE id=%s",
-            (
-                average,
-                points,
-                num_exams,
-                subject_id,
-            ),
-        )
+        num_exams = len(grades) if grades else 0
+        points = round((average - 4) * 2, 3) if average > 4 else 0
+
+        update_queries.append((average, points, num_exams, weight, id))
+
+    # Execute all updates at once
+    cursor.executemany(
+        "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
+        update_queries,
+    )
     update_main(current_user)
 
 
 # Function to update the total average, total points, and total number of exams in the main table
 def update_main(current_user):
     cursor.execute(
-        "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=%s",
+        "SELECT name,average,points,num_exams,weight FROM subjects WHERE user_id=%s",
         (current_user["id"],),
     )
     subjects = cursor.fetchall()
+
     val = 0
     sumer = 0
     points = 0
     for subject in subjects:
-        val += subject[0] * subject[4]
-        sumer += 1 * subject[4]
-        points += subject[1] * subject[4]
+        if subject[3] is None or subject[3] == "":
+            continue
+        else:
+            val += subject[1] * subject[4]
+            sumer += 1 * subject[4]
+            points += subject[2] * subject[4]
     total_average = round(val / sumer if sumer != 0 else 0, 3)
-    num_exams = sum([subject[3] for subject in subjects])
+    num_exams = sum(
+        [subject[3] if subject[3] is not None else 0 for subject in subjects]
+    )
+
     cursor.execute(
         "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
         (
@@ -425,32 +437,30 @@ def add_grade(current_user):
         grade = data.get("grade")
         weight = data.get("weight")
         details = data.get("details")
-        try:
+        if data.get("subject_id") is None:
+            response = get_subject_id(data.get("subject_name"), current_user)
+            subject_id = response["id"]
+        else:
             subject_id = data.get("subject_id")
-        except:
-            try:
-                subject_name = data.get("subject_name")
-                subject_id = get_subject_chage(subject_name, current_user)
-            except:
-                return jsonify({"success": False, "message": "No subject given"}), 400
-        if subject_name is not None:
-            get_subject_chage(subject_name, current_user)
 
         cursor.execute(
             "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (%s,%s, %s, %s, %s, %s, %s)",
             (date, name, grade, weight, details, subject_id, current_user["id"]),
         )
-
-        cursor.execute("SELECT id FROM grades WHERE name=%s", (name,))
-        grade_id = cursor.fetchone()[0]
+        grade_id = cursor.lastrowid
         update_subjects(current_user)
         db.commit()
         return (
             jsonify(
                 {
                     "success": True,
-                    "message": "Grade added successfully",
+                    "message": (
+                        "New grade added successfully"
+                        if not response["new_grade"]
+                        else "New grade and new subject added successfully"
+                    ),
                     "id": grade_id,
+                    "subjekt_id": response["id"] if response["new_grade"] else None,
                 }
             ),
             200,
@@ -604,18 +614,17 @@ def update_password(current_user):
                 "UPDATE users SET password=%s WHERE id=%s",
                 (hashed_password, current_user["id"]),
             )
-            db.commit()
             cursor.execute(
                 "SELECT username, password, id FROM users WHERE username = %s",
                 (current_user["username"],),
             )
             user = cursor.fetchone()
             token = generate_jwt(current_user["username"], new_password)
+            db.commit()
             return jsonify({"success": True, "token": token, "id": user[2]}), 200
         else:
             return jsonify({"success": False, "message": "Invalid password"}), 401
     except Exception as e:
-        print(e)
         return jsonify({"success": False, "message": str(e)}), 500
 
 
@@ -631,8 +640,9 @@ def update_username(current_user):
             "UPDATE users SET username=%s WHERE id=%s",
             (username, current_user["id"]),
         )
-        db.commit()
+
         token = generate_jwt(username, password)
+        db.commit()
         return (
             jsonify(
                 {
@@ -659,8 +669,9 @@ def register():
             "INSERT INTO users (username, password) VALUES (%s, %s)",
             (username, hashed_password),
         )
-        db.commit()
+
         token = generate_jwt(username, password)
+        db.commit()
         return (
             jsonify(
                 {

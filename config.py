@@ -1,6 +1,8 @@
 import os
 import mysql.connector
+from dotenv import load_dotenv
 
+load_dotenv()
 # Regular API keys
 VALID_API_KEYS = [
     "65e8a49b49d172573cb8c68cd612a375",
@@ -16,7 +18,7 @@ ADMIN_API_KEYS = [
 
 db = mysql.connector.connect(
     host=os.environ.get("HOST"),
-    user=os.environ.get("USER"),
+    user=os.environ.get("DB_USER"),
     password=os.environ.get("PASSWORD"),
     database=os.environ.get("DATABASE"),
     connect_timeout=10,  # Set the connection timeout to 10 seconds

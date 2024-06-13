@@ -9,6 +9,20 @@
 {% endblock %} {% block content %}
 <main>
   <section>
+    <h2>Login</h2>
+    <div class="endpoint">
+      <h3>Login</h3>
+      <p><strong>Route:</strong> <code>POST /login</code></p>
+      <p><strong>Description:</strong> Login a user.</p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>username</code> and
+        <code>password</code>.
+      </p>
+      <p>
+        <strong>Response:</strong> JSON object containing <code>token</code>.
+        Need to include the token in the header of all future requests.
+      </p>
+    </div>
     <h2>Subjects</h2>
     <div class="endpoint">
       <h3>Get All Subjects</h3>
@@ -19,6 +33,7 @@
         <code>name</code>, <code>average</code>, <code>points</code>,
         <code>num_exams</code> for each subject.
       </p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Get a Single Subject</h3>
@@ -32,6 +47,7 @@
         <code>name</code>, <code>average</code>, <code>points</code>,
         <code>num_exams</code> for the specified subject.
       </p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Create a New Subject</h3>
@@ -42,6 +58,7 @@
         <code>average</code>, <code>points</code>, <code>num_exams</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the created subject.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Update a Subject</h3>
@@ -50,15 +67,18 @@
         <strong>Description:</strong> Update details of an existing subject.
       </p>
       <p>
-        <strong>Request Body:</strong> JSON containing <code>name</code> and/or<code>weight</code>.
+        <strong>Request Body:</strong> JSON containing
+        <code>name</code> and/or<code>weight</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the updated subject.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Delete a Subject</h3>
       <p><strong>Route:</strong> <code>DELETE /subjects/{subjectId}</code></p>
       <p><strong>Description:</strong> Remove a subject by its ID.</p>
       <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
   </section>
   <section>
@@ -72,6 +92,7 @@
         <code>grade</code>, <code>weight</code>, <code>date</code>,
         <code>details</code>, <code>subject</code>
       </p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Get Grades for a Specific Subject</h3>
@@ -88,6 +109,7 @@
         <code>grade</code>, <code>weight</code>, <code>date</code>,
         <code>details</code> for each grade of the specified subject. subject.
       </p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Get a Single Grade</h3>
@@ -101,6 +123,7 @@
         <code>grade</code>, <code>weight</code>, <code>date</code>,
         <code>details</code>, <code>subject</code>
       </p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Create a New Grade</h3>
@@ -112,6 +135,7 @@
         <code>weight</code>, <code>subject_id</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the created grade.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Update a Grade</h3>
@@ -123,12 +147,62 @@
         <code>weight</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the updated grade.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">
       <h3>Delete a Grade</h3>
       <p><strong>Route:</strong> <code>DELETE /grades/{gradeId}</code></p>
       <p><strong>Description:</strong> Remove a grade by its ID.</p>
       <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
+    </div>
+    <h2>Users</h2>
+    <div class="endpoint">
+      <h3>Get User</h3>
+      <p><strong>Route:</strong> <code>GET /user</code></p>
+      <p><strong>Description:</strong> Retrieve details of the current user.</p>
+      <p>
+        <strong>Response:</strong> JSON object containing <code>id</code>,
+        <code>username</code>, <code>total_average</code>,
+        <code>total_points</code>, <code>total_exams</code>.
+      </p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Update User Password</h3>
+      <p><strong>Route:</strong> <code>PUT /user/update_password</code></p>
+      <p>
+        <strong>Description:</strong> Update the password of the current user.
+      </p>
+      <p>
+        <strong>Request Body:</strong> JSON containing
+        <code>old_password</code>, <code>new_password</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Update Username</h3>
+      <p><strong>Route:</strong> <code>PUT /user/update_username</code></p>
+      <p>
+        <strong>Description:</strong> Update the username of the current user.
+      </p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>username</code> and
+        <code>password</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Register</h3>
+      <p><strong>Route:</strong> <code>POST /register</code></p>
+      <p><strong>Description:</strong> Register a new user.</p>
+      <p>
+        <strong>Request Body:</strong> JSON containing <code>username</code>,
+        <code>password</code>.
+      </p>
+      <p><strong>Response:</strong> JSON object of the created user.</p>
     </div>
   </section>
 </main>

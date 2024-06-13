@@ -29,7 +29,8 @@ cursor.execute(
         password TEXT NOT NULL,
         total_average REAL,
         total_points INT,
-        total_subjects INT
+        total_subjects INT,
+        admin BOOLEAN DEFAULT FALSE
         );
         """
 )
@@ -73,10 +74,11 @@ password = "admin"
 hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
 cursor.execute(
-    "INSERT INTO users (username, password) VALUES (%s, %s)",
+    "INSERT INTO users (username, password,admin) VALUES (%s, %s,%s)",
     (
         name,
         hashed_password,
+        True,
     ),
 )
 admin_id = cursor.lastrowid
@@ -115,7 +117,7 @@ for id, element in enumerate(grades.values(), start=1):
             ),
         )
 # Get the place of an item from grades.values()
-gesang_id = list(subjects).index("Grundlagenfach Sologesang")
+gesang_id = list(subjects).index("Grundlagenfach Sologesang") + 1
 cursor.execute(
     "INSERT INTO grades (date, name, grade,details, weight, subject_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
     (

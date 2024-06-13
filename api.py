@@ -3,10 +3,34 @@ import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
+from jwt import ExpiredSignatureError, InvalidTokenError
 from config import db, cursor
+import time
 
 api_routes = Blueprint("api_routes", __name__)
 
+
+def generate_jwt(user, password):
+
+    cursor.execute(
+        "SELECT username, password, id FROM users WHERE username = %s", (user,)
+    )
+    user_data = cursor.fetchone()
+    if check_password_hash(user_data[1], password):
+
+        token = jwt.encode(
+            {
+                "username": user_data[0],
+                "exp": datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(hours=24),
+                "id": user_data[2],
+            },
+            current_app.config["SECRET_KEY"],
+        )
+        return token
+    else:
+        # Raise an exception for invalid username or password
+        raise ValueError("Invalid username or password")
 
 
 # Function to get the name of a subject based on its ID
@@ -22,24 +46,125 @@ def get_subject_name(subject_id, current_user):
         return "Unknown"
 
 
+def get_subject_chage(subject_name, current_user):
+    cursor.execute(
+        "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
+        (subject_name, current_user["id"]),
+    )
+    subject_id = cursor.fetchone()
+    if subject_id:
+        return subject_id[0]
+    else:
+        cursor.execute(
+            "INSERT INTO subjects (name, user_id) VALUES (%s, %s)",
+        )
+        subject_id = cursor.lastrowid
+        return subject_id
+
+
+def delete_user_data(user_id):
+    try:
+        cursor.execute(
+            "SELECT COUNT(*) FROM subjects WHERE user_id=%s",
+            (user_id,),
+        )
+        subject_count = cursor.fetchone()[0]
+        cursor.execute(
+            "SELECT COUNT(*) FROM grades WHERE user_id=%s",
+            (user_id,),
+        )
+        grade_count = cursor.fetchone()[0]
+        cursor.execute(
+            "DELETE FROM grades WHERE user_id=%s",
+            (user_id,),
+        )
+        cursor.execute(
+            "DELETE FROM subjects WHERE user_id=%s",
+            (user_id,),
+        )
+        cursor.execute(
+            "DELETE FROM users WHERE id=%s",
+            (user_id,),
+        )
+        db.commit()
+        return f"User deleted successfully with {subject_count} subjects, {grade_count} grades"
+    except Exception as e:
+        raise ValueError(f"Error deleting user: {e}")
+
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("x-access-token")
         if not token:
-            return jsonify({"success": False,"message": "Token is missing"}), 403
+            return jsonify({"success": False, "message": "Token is missing"}), 403
 
         try:
             data = jwt.decode(
                 token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
             )
             current_user = {"username": data["username"], "id": data["id"]}
-        except:
-            return jsonify({"success": False,"message": "Token is invalid or expired"}), 403
+        except (ExpiredSignatureError, InvalidTokenError):
+            return (
+                jsonify({"success": False, "message": "Token is invalid or expired"}),
+                403,
+            )
 
         return f(current_user, *args, **kwargs)
 
     return decorated
+
+
+from jwt import ExpiredSignatureError, InvalidTokenError
+
+
+def admin_token_required(f):
+    @wraps(f)
+    def admin_decorated(*args, **kwargs):
+        token = request.headers.get("x-access-token")
+        if not token:
+            return jsonify({"success": False, "message": "Token is missing"}), 403
+
+        try:
+            data = jwt.decode(
+                token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+            )
+            current_user = {"username": data["username"], "id": data["id"]}
+            cursor.execute(
+                "SELECT username, id, admin FROM users WHERE username = %s",
+                (data["username"],),
+            )
+            user_data = cursor.fetchone()
+            if user_data is None:
+                return (
+                    jsonify({"success": False, "message": "User does not exist"}),
+                    403,
+                )
+            if not user_data[0] == data["username"]:
+                return (
+                    jsonify({"success": False, "message": "Username is not correct"}),
+                    403,
+                )
+            if not user_data[1] == data["id"]:
+                return (
+                    jsonify({"success": False, "message": "ID is not correct"}),
+                    403,
+                )
+            if not user_data[2]:
+                return (
+                    jsonify({"success": False, "message": "User is not admin"}),
+                    403,
+                )
+
+        except (ExpiredSignatureError, InvalidTokenError):
+            return (
+                jsonify({"success": False, "message": "Token is invalid or expired"}),
+                403,
+            )
+
+        return f(current_user, *args, **kwargs)
+
+    return admin_decorated
 
 
 # Function to update the average, points, and number of exams for each subject
@@ -300,7 +425,16 @@ def add_grade(current_user):
         grade = data.get("grade")
         weight = data.get("weight")
         details = data.get("details")
-        subject_id = data.get("subject_id")
+        try:
+            subject_id = data.get("subject_id")
+        except:
+            try:
+                subject_name = data.get("subject_name")
+                subject_id = get_subject_chage(subject_name, current_user)
+            except:
+                return jsonify({"success": False, "message": "No subject given"}), 400
+        if subject_name is not None:
+            get_subject_chage(subject_name, current_user)
 
         cursor.execute(
             "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (%s,%s, %s, %s, %s, %s, %s)",
@@ -448,6 +582,7 @@ def get_user(current_user):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # what method should this be?
 @api_routes.route("/user/update_password", methods=["PUT"])
 @token_required
@@ -456,7 +591,9 @@ def update_password(current_user):
     try:
         old_password = data.get("old_password")
         new_password = data.get("new_password")
-        cursor.execute("SELECT password FROM users WHERE id = %s", (current_user["id"],))
+        cursor.execute(
+            "SELECT password FROM users WHERE id = %s", (current_user["id"],)
+        )
         user = cursor.fetchone()
 
         if user and check_password_hash(user[0], old_password):
@@ -468,19 +605,17 @@ def update_password(current_user):
                 (hashed_password, current_user["id"]),
             )
             db.commit()
-            token = jwt.encode(
-                {
-                    "username": current_user["username"],
-                    "exp": datetime.datetime.now(datetime.timezone.utc)
-                    + datetime.timedelta(hours=24),
-                    "id": user[2],
-                },
-                current_app.config["SECRET_KEY"],
+            cursor.execute(
+                "SELECT username, password, id FROM users WHERE username = %s",
+                (current_user["username"],),
             )
+            user = cursor.fetchone()
+            token = generate_jwt(current_user["username"], new_password)
             return jsonify({"success": True, "token": token, "id": user[2]}), 200
         else:
             return jsonify({"success": False, "message": "Invalid password"}), 401
     except Exception as e:
+        print(e)
         return jsonify({"success": False, "message": str(e)}), 500
 
 
@@ -490,14 +625,22 @@ def update_username(current_user):
     data = request.get_json()
     try:
         username = data.get("username")
+        password = data.get("password")
 
         cursor.execute(
             "UPDATE users SET username=%s WHERE id=%s",
             (username, current_user["id"]),
         )
         db.commit()
+        token = generate_jwt(username, password)
         return (
-            jsonify({"success": True, "message": "Username updated successfully"}),
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Username updated successfully",
+                    "token": token,
+                }
+            ),
             200,
         )
     except Exception as e:
@@ -517,8 +660,15 @@ def register():
             (username, hashed_password),
         )
         db.commit()
+        token = generate_jwt(username, password)
         return (
-            jsonify({"success": True, "message": "User registered successfully"}),
+            jsonify(
+                {
+                    "success": True,
+                    "message": "User registered successfully",
+                    "token": token,
+                }
+            ),
             201,
         )
     except Exception as e:
@@ -532,37 +682,35 @@ def login():
         username = data.get("username")
         password = data.get("password")
 
-        cursor.execute(
-            "SELECT username, password, id FROM users WHERE username = %s", (username,)
-        )
-        user = cursor.fetchone()
+        token = generate_jwt(username, password)
 
-        if user and check_password_hash(user[1], password):
-            token = jwt.encode(
-                {
-                    "username": username,
-                    "exp": datetime.datetime.now(datetime.timezone.utc)
-                    + datetime.timedelta(hours=24),
-                    "id": user[2],
-                },
-                current_app.config["SECRET_KEY"],
-            )
+        return jsonify({"success": True, "token": token}), 200
 
-            return jsonify({"success": True, "token": token, "id": user[2]}), 200
-        else:
-            return jsonify({"success": False, "message": "Invalid credentials"}), 401
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
-    
-@api_routes.route("/user/<int:user_id>", methods=["DELETE"])
+
+
+@api_routes.route("/user", methods=["DELETE"])
 @token_required
-def delete_user(current_user, user_id):
+def delete_user(current_user):
     try:
-        cursor.execute(
-            "DELETE FROM users WHERE id=%s AND user_id=%s",
-            (user_id, current_user["id"]),
-        )
-        db.commit()
-        return jsonify({"success": True, "message": "User deleted successfully"}), 200
+        message = delete_user_data(current_user["id"])
+
+        return jsonify({"success": True, "message": message}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_routes.route("/user/<int:user_id>", methods=["DELETE"])
+@admin_token_required
+def admin_delete_user(current_user, user_id):
+    if not user_id:
+        return jsonify({"success": False, "message": "No User given"}), 500
+    try:
+        message = delete_user_data(user_id)
+
+        return jsonify({"success": True, "message": message}), 200
+
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

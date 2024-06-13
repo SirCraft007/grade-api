@@ -19,6 +19,6 @@ db = mysql.connector.connect(
     user="jungwac1_DataB",
     password="3!%;+dEe1j",
     database="jungwac1_data",
+    connect_timeout=10,  # Set the connection timeout to 10 seconds
 )
 cursor = db.cursor()
-

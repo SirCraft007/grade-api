@@ -15,10 +15,10 @@ ADMIN_API_KEYS = [
 
 
 db = mysql.connector.connect(
-    host="jungwac1.mysql.db.hostpoint.ch",
-    user="jungwac1_DataB",
-    password="3!%;+dEe1j",
-    database="jungwac1_data",
+    host=os.environ.get("HOST"),
+    user=os.environ.get("USER"),
+    password=os.environ.get("PASSWORD"),
+    database=os.environ.get("DATABASE"),
     connect_timeout=10,  # Set the connection timeout to 10 seconds
 )
 cursor = db.cursor()

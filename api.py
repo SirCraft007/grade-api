@@ -313,11 +313,7 @@ def add_subject(current_user):
                 current_user["id"],
             ),
         )
-        cursor.execute(
-            "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
-            (name, current_user["id"]),
-        )
-        subject_id = cursor.fetchone()[0]
+        subject_id = cursor.lastrowid
         update_subjects(current_user)
         db.commit()
         return (
@@ -352,7 +348,8 @@ def update_subject(current_user, subject_id):
                 "UPDATE subjects SET name=%s WHERE id=%s AND user_id=%s",
                 (name, subject_id, current_user["id"]),
             )
-        update_subjects(current_user)
+            update_subjects(current_user)
+
         db.commit()
         return (
             jsonify({"success": True, "message": "Subject updated successfully"}),
@@ -522,6 +519,8 @@ def update_grade(current_user, grade_id):
                     jsonify({"success": False, "message": f"Invalid key: {key}"}),
                     400,
                 )
+        data.pop("subject_id", None)
+        data.pop("subject_name", None)
         if data.get("subject_id") is None:
             if data.get("subject_name") is not None:
                 response = get_subject_id(data.get("subject_name"), current_user)
@@ -529,8 +528,10 @@ def update_grade(current_user, grade_id):
             else:
                 print("test")
                 subject_id = None
+                response=None
         else:
             subject_id = data.get("subject_id")
+            response=None
         # add the subject_id to the data
         if subject_id:
             data["subject_id"] = subject_id
@@ -540,14 +541,20 @@ def update_grade(current_user, grade_id):
         update_values += (grade_id, current_user["id"])
         sql = f"UPDATE grades SET {update_columns} WHERE id = %s and user_id=%s"
         cursor.execute(sql, update_values)
-
-        update_subjects(current_user)
+        if data.get("grade") is not None or data.get("weight") is not None or subject_id is not None:
+            update_subjects(current_user)
         db.commit()
-        if response["new_grade"]:
-            return (
-                jsonify({"success": True, "message": "Grade updated and new subject added successfully","subjekt_id": response["id"] if response["new_grade"] else None}),
-                200,
-            )
+        if response:
+            if response["new_grade"]:
+                return (
+                    jsonify({"success": True, "message": "Grade updated and new subject added successfully","subjekt_id": response["id"] if response["new_grade"] else None}),
+                    200,
+                )
+            else:
+                return (
+                    jsonify({"success": True, "message": "Grade updated successfully"}),
+                    200,
+                )
         
         return (
             jsonify({"success": True, "message": "Grade updated successfully"}),

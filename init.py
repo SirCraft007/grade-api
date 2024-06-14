@@ -124,12 +124,23 @@ cursor.executemany(
 
 print("Grades created")
 update_queries = []
+
+# Fetch all grades in one query
+cursor.execute(
+    "SELECT subject_id, grade, weight FROM grades WHERE user_id=%s",
+    (admin_id,)
+)
+all_grades = cursor.fetchall()
+
+# Initialize a dictionary to hold grades for each subject
+grades_dict = {i: [] for i in range(1, len(subjects) + 1)}
+
+# Populate the dictionary with fetched grades
+for grade in all_grades:
+    subject_id, grade_value, grade_weight = grade
+    grades_dict[subject_id].append((grade_value, grade_weight))
+
 for id, element in enumerate(subjects, start=1):
-    cursor.execute(
-        "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
-        (id, admin_id),
-    )
-    grades = cursor.fetchall()
     val = 0
     sumer = 0
     weight = 1
@@ -138,13 +149,13 @@ for id, element in enumerate(subjects, start=1):
     elif element in ["Grundlagenfach Sologesang", "Musik"]:
         weight = 0.5
 
-    for grade in grades:
+    for grade in grades_dict[id]:
         if grade[0] and grade[0] != 0:
             val += grade[0] * grade[1]
             sumer += grade[1]
 
     average = round(val / sumer if sumer != 0 else 0, 3)
-    num_exams = len(grades) if grades else 0
+    num_exams = len(grades_dict[id]) if grades_dict[id] else 0
     points = round((average - 4) * 2, 3) if average > 4 else 0
     if num_exams == 0:
         update_queries.append((None, None, None, weight, id))
@@ -159,7 +170,6 @@ cursor.executemany(
 
 print("Subjects completed")
 
-print("Subjects completed")
 cursor.execute(
     "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=%s",
     (admin_id,),

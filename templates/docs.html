@@ -107,7 +107,7 @@
       <p>
         <strong>Response:</strong> JSON array of <code>id</code>,
         <code>grade</code>, <code>weight</code>, <code>date</code>,
-        <code>details</code> for each grade of the specified subject. subject.
+        <code>details</code> for each grade of the specified subject.
       </p>
       <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
@@ -132,7 +132,9 @@
       <p>
         <strong>Request Body:</strong> JSON containing <code>date</code>,
         <code>name</code>, <code>grade</code>, <code>details</code>,
-        <code>weight</code>, <code>subject_id</code>.
+        <code>weight</code> and <code>subject_id</code> or
+        <code>subject_name</code>. It will even create a new subject if it
+        doesn't exist and return the new subject's ID.
       </p>
       <p><strong>Response:</strong> JSON object of the created grade.</p>
       <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
@@ -203,6 +205,13 @@
         <code>password</code>.
       </p>
       <p><strong>Response:</strong> JSON object of the created user.</p>
+    </div>
+    <div class="endpoint">
+      <h3>Delete User</h3>
+      <p><strong>Route:</strong> <code>DELETE /user</code></p>
+      <p><strong>Description:</strong> Delete the current user.</p>
+      <p><strong>Response:</strong> JSON object indicating success/failure.</p>
+      <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
   </section>
 </main>

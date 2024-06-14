@@ -513,15 +513,27 @@ def update_grade(current_user, grade_id):
         data = request.get_json()
 
         # Define a list of valid keys
-        valid_keys = ["date", "name", "grade", "weight", "details", "subject_id"]
+        valid_keys = ["date", "name", "grade", "weight", "details"]
 
         # Validate keys in the incoming data
         for key in data.keys():
-            if key not in valid_keys:
+            if key not in valid_keys and key not in ["subject_id", "subject_name"]:
                 return (
                     jsonify({"success": False, "message": f"Invalid key: {key}"}),
                     400,
                 )
+        if data.get("subject_id") is None:
+            if data.get("subject_name") is not None:
+                response = get_subject_id(data.get("subject_name"), current_user)
+                subject_id = response["id"]
+            else:
+                print("test")
+                subject_id = None
+        else:
+            subject_id = data.get("subject_id")
+        # add the subject_id to the data
+        if subject_id:
+            data["subject_id"] = subject_id
 
         update_columns = ", ".join(f"{key} = %s" for key in data.keys())
         update_values = tuple(data.values())
@@ -531,6 +543,12 @@ def update_grade(current_user, grade_id):
 
         update_subjects(current_user)
         db.commit()
+        if response["new_grade"]:
+            return (
+                jsonify({"success": True, "message": "Grade updated and new subject added successfully","subjekt_id": response["id"] if response["new_grade"] else None}),
+                200,
+            )
+        
         return (
             jsonify({"success": True, "message": "Grade updated successfully"}),
             200,

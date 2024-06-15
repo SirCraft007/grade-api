@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 from config import db, cursor
+import os
 
 api_routes = Blueprint("api_routes", __name__)
 
@@ -759,3 +760,6 @@ def admin_delete_user(current_user, user_id):
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+    
+if __name__ == "__main__":
+   os.system('python3 app.py')

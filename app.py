@@ -3,7 +3,6 @@ from api import api_routes
 from datetime import datetime
 from flask_sitemapper import Sitemapper
 from keygen import generate_api_key
-import os
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 

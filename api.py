@@ -124,9 +124,6 @@ def token_required(f):
     return decorated
 
 
-from jwt import ExpiredSignatureError, InvalidTokenError
-
-
 def admin_token_required(f):
     @wraps(f)
     def admin_decorated(*args, **kwargs):
@@ -529,10 +526,10 @@ def update_grade(current_user, grade_id):
             else:
                 print("test")
                 subject_id = None
-                response=None
+                response = None
         else:
             subject_id = data.get("subject_id")
-            response=None
+            response = None
         # add the subject_id to the data
         if subject_id:
             data["subject_id"] = subject_id
@@ -542,13 +539,25 @@ def update_grade(current_user, grade_id):
         update_values += (grade_id, current_user["id"])
         sql = f"UPDATE grades SET {update_columns} WHERE id = %s and user_id=%s"
         cursor.execute(sql, update_values)
-        if data.get("grade") is not None or data.get("weight") is not None or subject_id is not None:
+        if (
+            data.get("grade") is not None
+            or data.get("weight") is not None
+            or subject_id is not None
+        ):
             update_subjects(current_user)
         db.commit()
         if response:
             if response["new_grade"]:
                 return (
-                    jsonify({"success": True, "message": "Grade updated and new subject added successfully","subjekt_id": response["id"] if response["new_grade"] else None}),
+                    jsonify(
+                        {
+                            "success": True,
+                            "message": "Grade updated and new subject added successfully",
+                            "subjekt_id": (
+                                response["id"] if response["new_grade"] else None
+                            ),
+                        }
+                    ),
                     200,
                 )
             else:
@@ -556,7 +565,7 @@ def update_grade(current_user, grade_id):
                     jsonify({"success": True, "message": "Grade updated successfully"}),
                     200,
                 )
-        
+
         return (
             jsonify({"success": True, "message": "Grade updated successfully"}),
             200,
@@ -760,6 +769,7 @@ def admin_delete_user(current_user, user_id):
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
-    
+
+
 if __name__ == "__main__":
-   os.system('python3 app.py')
+    os.system("python3 app.py")

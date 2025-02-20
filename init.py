@@ -1,6 +1,6 @@
 import json
 from werkzeug.security import generate_password_hash
-from config import db, cursor
+from config import conn, cur
 
 with open("Grades schulNetz.json", "r") as file:
     data = json.load(file)
@@ -13,79 +13,77 @@ nograde_index = [
 ]
 
 # Drop the tables if they exist
-cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
-cursor.execute("DROP TABLE IF EXISTS subjects;")
-cursor.execute("DROP TABLE IF EXISTS grades;")
-cursor.execute("DROP TABLE IF EXISTS users;")
-cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
-
+cur.execute("PRAGMA foreign_keys = OFF;")
+cur.execute("DROP TABLE IF EXISTS subjects;")
+cur.execute("DROP TABLE IF EXISTS grades;")
+cur.execute("DROP TABLE IF EXISTS users;")
+cur.execute("PRAGMA foreign_keys = ON;")
 print("Tables dropped")
 
-cursor.execute(
+cur.execute(
     """CREATE TABLE IF NOT EXISTS users (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         total_average REAL,
-        total_points INT,
-        total_exams INT,
+        total_points INTEGER,
+        total_exams INTEGER,
         admin BOOLEAN DEFAULT FALSE
         );
         """
 )
 
 # Create the subjects table
-cursor.execute(
+cur.execute(
     """
 CREATE TABLE IF NOT EXISTS subjects (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     average REAL,
-    points INT,
-    num_exams INT,
+    points INTEGER,
+    num_exams INTEGER,
     weight REAL DEFAULT 1,
-    user_id INT NOT NULL,
+    user_id INTEGER NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
 """
 )
 
 # Create the grades table
-cursor.execute(
+cur.execute(
     """
 CREATE TABLE IF NOT EXISTS grades (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
     name TEXT NOT NULL,
     grade FLOAT,
     details TEXT,
     weight REAL DEFAULT 1,
-    user_id INT NOT NULL,
-    subject_id INT NOT NULL,
+    user_id INTEGER NOT NULL,
+    subject_id INTEGER NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(subject_id) REFERENCES subjects(id)
 );
 """
 )
 print("Tables created")
+
+
 name = "Serafino"
 password = "admin"
 hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
+cursor = conn.cursor()
 cursor.execute(
-    "INSERT INTO users (username, password,admin) VALUES (%s, %s,%s)",
-    (
-        name,
-        hashed_password,
-        True,
-    ),
+    "INSERT INTO users (username, password, admin) VALUES (?, ?, ?)",
+    (name, hashed_password, True),
 )
 admin_id = cursor.lastrowid
 print("User created")
 # Insert data into grades table
-values = [(element, admin_id) for element in subjects]
-cursor.executemany("INSERT INTO subjects (name, user_id) VALUES (%s, %s)", values)
+subject_values = [(element, admin_id) for element in subjects]
+cur.executemany("INSERT INTO subjects (name, user_id) VALUES (?, ?)", subject_values)
 print("Subjects created")
 values = []
 add = 0
@@ -97,7 +95,7 @@ for id, element in enumerate(grades.values(), start=1):
             (
                 grade["date"],
                 grade["name"],
-                None if grade["grade"] == "" else grade["grade"],
+                0 if grade["grade"] == "" else grade["grade"],
                 grade["details"],
                 grade["weight"],
                 id + add,
@@ -111,14 +109,14 @@ values.append(
         "20.01.2024",
         "Gesang",
         "5",
-        "",
+        0,
         "1",
         list(subjects).index("Grundlagenfach Sologesang") + 1,
         admin_id,
     )
 )
-cursor.executemany(
-    "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+cur.executemany(
+    "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
     values,
 )
 
@@ -126,11 +124,8 @@ print("Grades created")
 update_queries = []
 
 # Fetch all grades in one query
-cursor.execute(
-    "SELECT subject_id, grade, weight FROM grades WHERE user_id=%s",
-    (admin_id,)
-)
-all_grades = cursor.fetchall()
+cur.execute("SELECT subject_id, grade, weight FROM grades WHERE user_id=?", (admin_id,))
+all_grades = cur.fetchall()
 
 # Initialize a dictionary to hold grades for each subject
 grades_dict = {i: [] for i in range(1, len(subjects) + 1)}
@@ -156,25 +151,27 @@ for id, element in enumerate(subjects, start=1):
 
     average = round(val / sumer if sumer != 0 else 0, 3)
     num_exams = len(grades_dict[id]) if grades_dict[id] else 0
-    points = round((average - 4) * 2, 3) if average > 4 else 0
+    points_temp = round((average - 4), 3)
+
+    points = points_temp if average > 4 else points_temp * 2
     if num_exams == 0:
-        update_queries.append((None, None, None, weight, id))
+        update_queries.append((0, 0, 0, weight, id))
     else:
         update_queries.append((average, points, num_exams, weight, id))
 
 # Execute all updates at once
-cursor.executemany(
-    "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
+cur.executemany(
+    "UPDATE subjects SET average=?, points=?, num_exams=?, weight=? WHERE id=?",
     update_queries,
 )
 
 print("Subjects completed")
 
-cursor.execute(
-    "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=%s",
+cur.execute(
+    "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=?",
     (admin_id,),
 )
-subjects = cursor.fetchall()
+subjects = cur.fetchall()
 val = 0
 sumer = 0
 points = 0
@@ -186,14 +183,13 @@ for subject in subjects:
 total_average = round(val / sumer if sumer != 0 else 0, 3)
 total_exams = sum([subject[3] for subject in subjects if subject[3] is not None])
 
-cursor.execute(
-    "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
+cur.execute(
+    "UPDATE users SET total_average=?, total_points=?, total_exams=? WHERE id=?",
     (total_average, points, total_exams, admin_id),
 )
 print("User completed")
 # Commit the transaction
-db.commit()
+conn.commit()
 print("Transaction completed")
-db.close()
 
 # Close the database

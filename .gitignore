@@ -10,7 +10,7 @@ pnpm-lock.yaml
 package.json
 
 # Environments 
-.env 
+.env*
 .venv 
 env/ 
 venv/ 
@@ -24,3 +24,5 @@ vscode/*
 vscode/settings.json
 .vscode/settings.json
 *.sh
+
+*.db*

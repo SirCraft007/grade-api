@@ -4,7 +4,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
-from config import db, cursor
+from config import conn, cur
 import os
 
 api_routes = Blueprint("api_routes", __name__)
@@ -12,10 +12,10 @@ api_routes = Blueprint("api_routes", __name__)
 
 def generate_jwt(user, password):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT username, password, id FROM users WHERE username = %s", (user,)
         )
-        user_data = cursor.fetchone()
+        user_data = cur.fetchone()
         if user_data and check_password_hash(user_data[1], password):
             token = jwt.encode(
                 {
@@ -38,11 +38,11 @@ def generate_jwt(user, password):
 
 # Function to get the name of a subject based on its ID
 def get_subject_name(subject_id, current_user):
-    cursor.execute(
+    cur.execute(
         "SELECT name FROM subjects WHERE id=%s AND user_id=%s",
         (subject_id, current_user["id"]),
     )
-    subject = cursor.fetchone()
+    subject = cur.fetchone()
     if subject:
         return subject[0]
     else:
@@ -51,25 +51,25 @@ def get_subject_name(subject_id, current_user):
 
 def delete_user_data(user_id):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT COUNT(*) FROM subjects WHERE user_id=%s",
             (user_id,),
         )
-        subject_count = cursor.fetchone()[0]
-        cursor.execute(
+        subject_count = cur.fetchone()[0]
+        cur.execute(
             "SELECT COUNT(*) FROM grades WHERE user_id=%s",
             (user_id,),
         )
-        grade_count = cursor.fetchone()[0]
-        cursor.execute(
+        grade_count = cur.fetchone()[0]
+        cur.execute(
             "DELETE FROM grades WHERE user_id=%s",
             (user_id,),
         )
-        cursor.execute(
+        cur.execute(
             "DELETE FROM subjects WHERE user_id=%s",
             (user_id,),
         )
-        cursor.execute(
+        cur.execute(
             "DELETE FROM users WHERE id=%s",
             (user_id,),
         )
@@ -79,21 +79,21 @@ def delete_user_data(user_id):
 
 
 def get_subject_id(subject_name, current_user):
-    cursor.execute(
+    cur.execute(
         "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
         (subject_name, current_user["id"]),
     )
     new_grade = False
-    subject = cursor.fetchone()
+    subject = cur.fetchone()
     if subject:
         subject_id = subject[0]
     else:
         try:
-            cursor.execute(
+            cur.execute(
                 "INSERT INTO subjects (name, user_id) VALUES (%s, %s)",
                 (subject_name, current_user["id"]),
             )
-            subject_id = cursor.lastrowid
+            subject_id = cur.lastrowid
             new_grade = True
 
         except Exception as e:
@@ -136,11 +136,11 @@ def admin_token_required(f):
                 token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
             )
             current_user = {"username": data["username"], "id": data["id"]}
-            cursor.execute(
+            cur.execute(
                 "SELECT username, id, admin FROM users WHERE username = %s",
                 (data["username"],),
             )
-            user_data = cursor.fetchone()
+            user_data = cur.fetchone()
             if user_data is None:
                 return (
                     jsonify({"success": False, "message": "User does not exist"}),
@@ -176,16 +176,14 @@ def admin_token_required(f):
 # Function to update the average, points, and number of exams for each subject
 def update_subjects(current_user):
     update_queries = []
-    cursor.execute(
-        "SELECT id, name FROM subjects WHERE user_id=%s", (current_user["id"],)
-    )
-    subjects = cursor.fetchall()
+    cur.execute("SELECT id, name FROM subjects WHERE user_id=%s", (current_user["id"],))
+    subjects = cur.fetchall()
     for id, element in enumerate(subjects, start=1):
-        cursor.execute(
+        cur.execute(
             "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
             (id, current_user["id"]),
         )
-        grades = cursor.fetchall()
+        grades = cur.fetchall()
         val = 0
         sumer = 0
         weight = 1
@@ -209,7 +207,7 @@ def update_subjects(current_user):
             update_queries.append((average, points, num_exams, weight, id))
 
     # Execute all updates at once
-    cursor.executemany(
+    cur.executemany(
         "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
         update_queries,
     )
@@ -218,11 +216,11 @@ def update_subjects(current_user):
 
 # Function to update the total average, total points, and total number of exams in the main table
 def update_main(current_user):
-    cursor.execute(
+    cur.execute(
         "SELECT name,average,points,num_exams,weight FROM subjects WHERE user_id=%s",
         (current_user["id"],),
     )
-    subjects = cursor.fetchall()
+    subjects = cur.fetchall()
 
     val = 0
     sumer = 0
@@ -239,7 +237,7 @@ def update_main(current_user):
         [subject[3] if subject[3] is not None else 0 for subject in subjects]
     )
 
-    cursor.execute(
+    cur.execute(
         "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
         (
             total_average,
@@ -257,11 +255,11 @@ def get_subject(current_user, subject_id):
     if not subject_id:
         return jsonify({"success": False, "message": "Subject ID is required"}), 400
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT id, name, average, points, num_exams FROM subjects WHERE id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
-        subject = cursor.fetchone()
+        subject = cur.fetchone()
         if not subject:
             return (
                 jsonify(
@@ -272,11 +270,11 @@ def get_subject(current_user, subject_id):
                 ),
                 404,
             )
-        cursor.execute(
+        cur.execute(
             "SELECT id FROM grades WHERE subject_id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
-        grade_ids = cursor.fetchall()
+        grade_ids = cur.fetchall()
         grade_ids_list = [grade_id[0] for grade_id in grade_ids]
         subject_list = {
             "id": subject[0],
@@ -300,10 +298,10 @@ def add_subject(current_user):
         name = data.get("name")
         try:
             weight = data.get("weight")
-        except:
+        except KeyError:
             weight = 1
 
-        cursor.execute(
+        cur.execute(
             "INSERT INTO subjects (name, weight, user_id) VALUES (%s,%s,%s)",
             (
                 name,
@@ -311,9 +309,9 @@ def add_subject(current_user):
                 current_user["id"],
             ),
         )
-        subject_id = cursor.lastrowid
+        subject_id = cur.lastrowid
         update_subjects(current_user)
-        db.commit()
+        conn.commit()
         return (
             jsonify(
                 {
@@ -337,18 +335,18 @@ def update_subject(current_user, subject_id):
         name = data.get("name")
         weight = data.get("weight")
         if weight is not None:
-            cursor.execute(
+            cur.execute(
                 "UPDATE subjects SET name=%s, weight=%s WHERE id=%s AND user_id=%s",
                 (name, weight, subject_id, current_user["id"]),
             )
         else:
-            cursor.execute(
+            cur.execute(
                 "UPDATE subjects SET name=%s WHERE id=%s AND user_id=%s",
                 (name, subject_id, current_user["id"]),
             )
             update_subjects(current_user)
 
-        db.commit()
+        conn.commit()
         return (
             jsonify({"success": True, "message": "Subject updated successfully"}),
             200,
@@ -362,12 +360,12 @@ def update_subject(current_user, subject_id):
 @token_required
 def delete_subject(current_user, subject_id):
     try:
-        cursor.execute(
+        cur.execute(
             "DELETE FROM subjects WHERE id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
         update_subjects(current_user)
-        db.commit()
+        conn.commit()
         return (
             jsonify({"success": True, "message": "Subject deleted successfully"}),
             200,
@@ -381,11 +379,11 @@ def delete_subject(current_user, subject_id):
 @token_required
 def get_grade(current_user, grade_id):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=%s AND user_id=%s",
             (grade_id, current_user["id"]),
         )
-        grade = cursor.fetchone()
+        grade = cur.fetchone()
         grade_list = {
             "id": grade[0],
             "name": grade[1],
@@ -406,11 +404,11 @@ def get_grade(current_user, grade_id):
 @token_required
 def subject_grade(current_user, subject_id):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=%s AND user_id=%s",
             (subject_id, current_user["id"]),
         )
-        grades = cursor.fetchall()
+        grades = cur.fetchall()
         grades_list = [
             {
                 "id": grade[0],
@@ -457,14 +455,14 @@ def add_grade(current_user):
                 "message": ("New grade added successfully"),
             }
 
-        cursor.execute(
+        cur.execute(
             "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (%s,%s, %s, %s, %s, %s, %s)",
             (date, name, grade, weight, details, subject_id, current_user["id"]),
         )
-        grade_id = cursor.lastrowid
+        grade_id = cur.lastrowid
         message["id"] = grade_id
         update_subjects(current_user)
-        db.commit()
+        conn.commit()
         return (
             jsonify(message),
             200,
@@ -477,11 +475,11 @@ def add_grade(current_user):
 @token_required
 def get_grades(current_user):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE user_id=%s",
             (current_user["id"],),
         )
-        grades = cursor.fetchall()
+        grades = cur.fetchall()
         grades_list = [
             {
                 "id": grade[0],
@@ -538,14 +536,14 @@ def update_grade(current_user, grade_id):
         update_values = tuple(data.values())
         update_values += (grade_id, current_user["id"])
         sql = f"UPDATE grades SET {update_columns} WHERE id = %s and user_id=%s"
-        cursor.execute(sql, update_values)
+        cur.execute(sql, update_values)
         if (
             data.get("grade") is not None
             or data.get("weight") is not None
             or subject_id is not None
         ):
             update_subjects(current_user)
-        db.commit()
+        conn.commit()
         if response:
             if response["new_grade"]:
                 return (
@@ -579,12 +577,12 @@ def update_grade(current_user, grade_id):
 @token_required
 def delete_grade(current_user, grade_id):
     try:
-        cursor.execute(
+        cur.execute(
             "DELETE FROM grades WHERE id=%s AND user_id=%s",
             (grade_id, current_user["id"]),
         )
         update_subjects(current_user)
-        db.commit()
+        conn.commit()
         return jsonify({"success": True, "message": "Grade deleted successfully"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -595,11 +593,11 @@ def delete_grade(current_user, grade_id):
 @token_required
 def get_subjects(current_user):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=%s",
             (current_user["id"],),
         )
-        subjects = cursor.fetchall()
+        subjects = cur.fetchall()
         subjects_list = [
             {
                 "id": subject[0],
@@ -620,11 +618,11 @@ def get_subjects(current_user):
 @token_required
 def get_user(current_user):
     try:
-        cursor.execute(
+        cur.execute(
             "SELECT id, username, total_average, total_points, total_exams FROM users WHERE id=%s",
             (current_user["id"],),
         )
-        user = cursor.fetchone()
+        user = cur.fetchone()
         user_list = {
             "id": user[0],
             "username": user[1],
@@ -645,26 +643,24 @@ def update_password(current_user):
     try:
         old_password = data.get("old_password")
         new_password = data.get("new_password")
-        cursor.execute(
-            "SELECT password FROM users WHERE id = %s", (current_user["id"],)
-        )
-        user = cursor.fetchone()
+        cur.execute("SELECT password FROM users WHERE id = %s", (current_user["id"],))
+        user = cur.fetchone()
 
         if user and check_password_hash(user[0], old_password):
             hashed_password = generate_password_hash(
                 new_password, method="pbkdf2:sha256"
             )
-            cursor.execute(
+            cur.execute(
                 "UPDATE users SET password=%s WHERE id=%s",
                 (hashed_password, current_user["id"]),
             )
-            cursor.execute(
+            cur.execute(
                 "SELECT username, password, id FROM users WHERE username = %s",
                 (current_user["username"],),
             )
-            user = cursor.fetchone()
+            user = cur.fetchone()
             token = generate_jwt(current_user["username"], new_password)
-            db.commit()
+            conn.commit()
             return jsonify({"success": True, "token": token, "id": user[2]}), 200
         else:
             return jsonify({"success": False, "message": "Invalid password"}), 401
@@ -680,13 +676,13 @@ def update_username(current_user):
         username = data.get("username")
         password = data.get("password")
 
-        cursor.execute(
+        cur.execute(
             "UPDATE users SET username=%s WHERE id=%s",
             (username, current_user["id"]),
         )
 
         token = generate_jwt(username, password)
-        db.commit()
+        conn.commit()
         return (
             jsonify(
                 {
@@ -709,13 +705,13 @@ def register():
         password = data.get("password")
 
         hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
-        cursor.execute(
+        cur.execute(
             "INSERT INTO users (username, password) VALUES (%s, %s)",
             (username, hashed_password),
         )
 
         token = generate_jwt(username, password)
-        db.commit()
+        conn.commit()
         return (
             jsonify(
                 {

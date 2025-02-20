@@ -1,5 +1,5 @@
 import os
-import mysql.connector
+import libsql_experimental as libsql
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,12 +15,9 @@ ADMIN_API_KEYS = [
     "3d9a5cafeba42343dc1605c9004d9091fdc2a72a99c84bca0d4cc8c9ed2a483c",
 ]
 
+url = os.environ.get("DB_URL")
+auth_token = os.environ.get("DB_AUTH_TOKEN")
 
-db = mysql.connector.connect(
-    host=os.environ.get("HOST"),
-    user=os.environ.get("DB_USER"),
-    password=os.environ.get("PASSWORD"),
-    database=os.environ.get("DATABASE"),
-    connect_timeout=10,  # Set the connection timeout to 10 seconds
-)
-cursor = db.cursor()
+conn = libsql.connect(url, auth_token=auth_token)
+cur = conn.cursor()
+print("connected")

@@ -13,7 +13,7 @@ api_routes = Blueprint("api_routes", __name__)
 def generate_jwt(user, password):
     try:
         cur.execute(
-            "SELECT username, password, id FROM users WHERE username = %s", (user,)
+            "SELECT username, password, id FROM users WHERE username = ?", (user,)
         )
         user_data = cur.fetchone()
         if user_data and check_password_hash(user_data[1], password):
@@ -39,7 +39,7 @@ def generate_jwt(user, password):
 # Function to get the name of a subject based on its ID
 def get_subject_name(subject_id, current_user):
     cur.execute(
-        "SELECT name FROM subjects WHERE id=%s AND user_id=%s",
+        "SELECT name FROM subjects WHERE id=? AND user_id=?",
         (subject_id, current_user["id"]),
     )
     subject = cur.fetchone()
@@ -52,25 +52,25 @@ def get_subject_name(subject_id, current_user):
 def delete_user_data(user_id):
     try:
         cur.execute(
-            "SELECT COUNT(*) FROM subjects WHERE user_id=%s",
+            "SELECT COUNT(*) FROM subjects WHERE user_id=?",
             (user_id,),
         )
         subject_count = cur.fetchone()[0]
         cur.execute(
-            "SELECT COUNT(*) FROM grades WHERE user_id=%s",
+            "SELECT COUNT(*) FROM grades WHERE user_id=?",
             (user_id,),
         )
         grade_count = cur.fetchone()[0]
         cur.execute(
-            "DELETE FROM grades WHERE user_id=%s",
+            "DELETE FROM grades WHERE user_id=?",
             (user_id,),
         )
         cur.execute(
-            "DELETE FROM subjects WHERE user_id=%s",
+            "DELETE FROM subjects WHERE user_id=?",
             (user_id,),
         )
         cur.execute(
-            "DELETE FROM users WHERE id=%s",
+            "DELETE FROM users WHERE id=?",
             (user_id,),
         )
         return f"User deleted successfully with {subject_count} subjects, {grade_count} grades"
@@ -80,7 +80,7 @@ def delete_user_data(user_id):
 
 def get_subject_id(subject_name, current_user):
     cur.execute(
-        "SELECT id FROM subjects WHERE name=%s AND user_id=%s",
+        "SELECT id FROM subjects WHERE name=? AND user_id=?",
         (subject_name, current_user["id"]),
     )
     new_grade = False
@@ -90,7 +90,7 @@ def get_subject_id(subject_name, current_user):
     else:
         try:
             cur.execute(
-                "INSERT INTO subjects (name, user_id) VALUES (%s, %s)",
+                "INSERT INTO subjects (name, user_id) VALUES (?, ?)",
                 (subject_name, current_user["id"]),
             )
             subject_id = cur.lastrowid
@@ -137,7 +137,7 @@ def admin_token_required(f):
             )
             current_user = {"username": data["username"], "id": data["id"]}
             cur.execute(
-                "SELECT username, id, admin FROM users WHERE username = %s",
+                "SELECT username, id, admin FROM users WHERE username = ?",
                 (data["username"],),
             )
             user_data = cur.fetchone()
@@ -176,11 +176,11 @@ def admin_token_required(f):
 # Function to update the average, points, and number of exams for each subject
 def update_subjects(current_user):
     update_queries = []
-    cur.execute("SELECT id, name FROM subjects WHERE user_id=%s", (current_user["id"],))
+    cur.execute("SELECT id, name FROM subjects WHERE user_id=?", (current_user["id"],))
     subjects = cur.fetchall()
     for id, element in enumerate(subjects, start=1):
         cur.execute(
-            "SELECT grade, weight FROM grades WHERE subject_id=%s AND user_id=%s",
+            "SELECT grade, weight FROM grades WHERE subject_id=? AND user_id=?",
             (id, current_user["id"]),
         )
         grades = cur.fetchall()
@@ -208,7 +208,7 @@ def update_subjects(current_user):
 
     # Execute all updates at once
     cur.executemany(
-        "UPDATE subjects SET average=%s, points=%s, num_exams=%s, weight=%s WHERE id=%s",
+        "UPDATE subjects SET average=?, points=?, num_exams=?, weight=? WHERE id=?",
         update_queries,
     )
     update_main(current_user)
@@ -217,7 +217,7 @@ def update_subjects(current_user):
 # Function to update the total average, total points, and total number of exams in the main table
 def update_main(current_user):
     cur.execute(
-        "SELECT name,average,points,num_exams,weight FROM subjects WHERE user_id=%s",
+        "SELECT name,average,points,num_exams,weight FROM subjects WHERE user_id=?",
         (current_user["id"],),
     )
     subjects = cur.fetchall()
@@ -238,7 +238,7 @@ def update_main(current_user):
     )
 
     cur.execute(
-        "UPDATE users SET total_average=%s, total_points=%s, total_exams=%s WHERE id=%s",
+        "UPDATE users SET total_average=?, total_points=?, total_exams=? WHERE id=?",
         (
             total_average,
             points,
@@ -256,7 +256,7 @@ def get_subject(current_user, subject_id):
         return jsonify({"success": False, "message": "Subject ID is required"}), 400
     try:
         cur.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=%s AND user_id=%s",
+            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=? AND user_id=?",
             (subject_id, current_user["id"]),
         )
         subject = cur.fetchone()
@@ -271,7 +271,7 @@ def get_subject(current_user, subject_id):
                 404,
             )
         cur.execute(
-            "SELECT id FROM grades WHERE subject_id=%s AND user_id=%s",
+            "SELECT id FROM grades WHERE subject_id=? AND user_id=?",
             (subject_id, current_user["id"]),
         )
         grade_ids = cur.fetchall()
@@ -302,7 +302,7 @@ def add_subject(current_user):
             weight = 1
 
         cur.execute(
-            "INSERT INTO subjects (name, weight, user_id) VALUES (%s,%s,%s)",
+            "INSERT INTO subjects (name, weight, user_id) VALUES (?,?,?)",
             (
                 name,
                 weight,
@@ -336,12 +336,12 @@ def update_subject(current_user, subject_id):
         weight = data.get("weight")
         if weight is not None:
             cur.execute(
-                "UPDATE subjects SET name=%s, weight=%s WHERE id=%s AND user_id=%s",
+                "UPDATE subjects SET name=?, weight=? WHERE id=? AND user_id=?",
                 (name, weight, subject_id, current_user["id"]),
             )
         else:
             cur.execute(
-                "UPDATE subjects SET name=%s WHERE id=%s AND user_id=%s",
+                "UPDATE subjects SET name=? WHERE id=? AND user_id=?",
                 (name, subject_id, current_user["id"]),
             )
             update_subjects(current_user)
@@ -361,7 +361,7 @@ def update_subject(current_user, subject_id):
 def delete_subject(current_user, subject_id):
     try:
         cur.execute(
-            "DELETE FROM subjects WHERE id=%s AND user_id=%s",
+            "DELETE FROM subjects WHERE id=? AND user_id=?",
             (subject_id, current_user["id"]),
         )
         update_subjects(current_user)
@@ -380,7 +380,7 @@ def delete_subject(current_user, subject_id):
 def get_grade(current_user, grade_id):
     try:
         cur.execute(
-            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=%s AND user_id=%s",
+            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE id=? AND user_id=?",
             (grade_id, current_user["id"]),
         )
         grade = cur.fetchone()
@@ -405,7 +405,7 @@ def get_grade(current_user, grade_id):
 def subject_grade(current_user, subject_id):
     try:
         cur.execute(
-            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=%s AND user_id=%s",
+            "SELECT id, grade, weight,date, details FROM grades WHERE subject_id=? AND user_id=?",
             (subject_id, current_user["id"]),
         )
         grades = cur.fetchall()
@@ -456,7 +456,7 @@ def add_grade(current_user):
             }
 
         cur.execute(
-            "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (%s,%s, %s, %s, %s, %s, %s)",
+            "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (?,?, ?, ?, ?, ?, ?)",
             (date, name, grade, weight, details, subject_id, current_user["id"]),
         )
         grade_id = cur.lastrowid
@@ -476,7 +476,7 @@ def add_grade(current_user):
 def get_grades(current_user):
     try:
         cur.execute(
-            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE user_id=%s",
+            "SELECT id,name, grade, weight,date, details, subject_id FROM grades WHERE user_id=?",
             (current_user["id"],),
         )
         grades = cur.fetchall()
@@ -532,10 +532,10 @@ def update_grade(current_user, grade_id):
         if subject_id:
             data["subject_id"] = subject_id
 
-        update_columns = ", ".join(f"{key} = %s" for key in data.keys())
+        update_columns = ", ".join(f"{key} = ?" for key in data.keys())
         update_values = tuple(data.values())
         update_values += (grade_id, current_user["id"])
-        sql = f"UPDATE grades SET {update_columns} WHERE id = %s and user_id=%s"
+        sql = f"UPDATE grades SET {update_columns} WHERE id = ? and user_id=?"
         cur.execute(sql, update_values)
         if (
             data.get("grade") is not None
@@ -578,7 +578,7 @@ def update_grade(current_user, grade_id):
 def delete_grade(current_user, grade_id):
     try:
         cur.execute(
-            "DELETE FROM grades WHERE id=%s AND user_id=%s",
+            "DELETE FROM grades WHERE id=? AND user_id=?",
             (grade_id, current_user["id"]),
         )
         update_subjects(current_user)
@@ -594,7 +594,7 @@ def delete_grade(current_user, grade_id):
 def get_subjects(current_user):
     try:
         cur.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=%s",
+            "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=?",
             (current_user["id"],),
         )
         subjects = cur.fetchall()
@@ -619,7 +619,7 @@ def get_subjects(current_user):
 def get_user(current_user):
     try:
         cur.execute(
-            "SELECT id, username, total_average, total_points, total_exams FROM users WHERE id=%s",
+            "SELECT id, username, total_average, total_points, total_exams FROM users WHERE id=?",
             (current_user["id"],),
         )
         user = cur.fetchone()
@@ -643,7 +643,7 @@ def update_password(current_user):
     try:
         old_password = data.get("old_password")
         new_password = data.get("new_password")
-        cur.execute("SELECT password FROM users WHERE id = %s", (current_user["id"],))
+        cur.execute("SELECT password FROM users WHERE id = ?", (current_user["id"],))
         user = cur.fetchone()
 
         if user and check_password_hash(user[0], old_password):
@@ -651,11 +651,11 @@ def update_password(current_user):
                 new_password, method="pbkdf2:sha256"
             )
             cur.execute(
-                "UPDATE users SET password=%s WHERE id=%s",
+                "UPDATE users SET password=? WHERE id=?",
                 (hashed_password, current_user["id"]),
             )
             cur.execute(
-                "SELECT username, password, id FROM users WHERE username = %s",
+                "SELECT username, password, id FROM users WHERE username = ?",
                 (current_user["username"],),
             )
             user = cur.fetchone()
@@ -677,7 +677,7 @@ def update_username(current_user):
         password = data.get("password")
 
         cur.execute(
-            "UPDATE users SET username=%s WHERE id=%s",
+            "UPDATE users SET username=? WHERE id=?",
             (username, current_user["id"]),
         )
 
@@ -706,7 +706,7 @@ def register():
 
         hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
         cur.execute(
-            "INSERT INTO users (username, password) VALUES (%s, %s)",
+            "INSERT INTO users (username, password) VALUES (?, ?)",
             (username, hashed_password),
         )
 

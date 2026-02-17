@@ -193,3 +193,5 @@ conn.commit()
 print("Transaction completed")
 
 # Close the database
+conn.close()
+print("Database closed")

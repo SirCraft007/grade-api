@@ -1,5 +1,4 @@
-import os
-import libsql_experimental as libsql
+import sqlite3
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,9 +14,6 @@ ADMIN_API_KEYS = [
     "3d9a5cafeba42343dc1605c9004d9091fdc2a72a99c84bca0d4cc8c9ed2a483c",
 ]
 
-url = os.environ.get("DB_URL")
-auth_token = os.environ.get("DB_AUTH_TOKEN")
-
-conn = libsql.connect(url, auth_token=auth_token)
+conn = sqlite3.connect("grades.db")
 cur = conn.cursor()
 print("connected")

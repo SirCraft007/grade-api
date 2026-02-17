@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from api import api_routes
+from routes import api_routes
 from datetime import datetime
 from flask_sitemapper import Sitemapper
 from keygen import generate_api_key

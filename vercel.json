@@ -1,16 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    { 
-      "src": "app.py", 
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": ["app.py", "requirements.txt"],
-        "command": "pip install -r requirements.txt && apt-get update && apt-get install -y mysql-server"
-      }
-    }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "app.py" }
-  ]
+  "buildCommand": "uv sync",
+  "installCommand": "pip install uv",
+  "devCommand": "uv run flask run --port $PORT"
 }

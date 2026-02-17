@@ -18,6 +18,6 @@ ADMIN_API_KEYS = [
 url = os.environ.get("DB_URL")
 auth_token = os.environ.get("DB_AUTH_TOKEN")
 
-conn = libsql.connect(url, auth_token=auth_token)
+conn = libsql.connect(url, auth_token=auth_token)  # pyright: ignore[reportAttributeAccessIssue]
 cur = conn.cursor()
 print("connected")

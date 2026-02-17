@@ -1,5 +1,5 @@
 import os
-import libsql_experimental as libsql
+import libsql
 from dotenv import load_dotenv
 
 load_dotenv()

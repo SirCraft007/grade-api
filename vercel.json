@@ -1,4 +1,1 @@
-{
-  "buildCommand": "uv sync",
-  "devCommand": "uv run flask run --port $PORT"
-}
+{}

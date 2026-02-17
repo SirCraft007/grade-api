@@ -1,5 +1,4 @@
 {
   "buildCommand": "uv sync",
-  "installCommand": "pip install uv",
   "devCommand": "uv run flask run --port $PORT"
 }

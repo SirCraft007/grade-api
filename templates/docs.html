@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block head %}
 <link
   rel="stylesheet"
-  href="/css/docs.css"
+  href="{{ url_for('static', filename='css/docs.css') }}"
 />
 <title>API Documentation</title>
 <h1>API Documentation</h1>

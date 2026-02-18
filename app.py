@@ -4,8 +4,11 @@ from flask import Flask, render_template
 from datetime import datetime
 from flask_sitemapper import Sitemapper
 from keygen import generate_api_key
+from APIendpoints.api import api_routes
 
 app = Flask(__name__)
+
+app.register_blueprint(api_routes)
 
 sitemapper = Sitemapper()
 sitemapper.init_app(app)

@@ -20,3 +20,5 @@ wheels/
 .venv
 .vercel
 .env*
+
+.vscode

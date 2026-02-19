@@ -9,6 +9,10 @@ dependencies = [
     "flask>=3.1.2",
     "flask-sitemapper>=1.8.2",
     "libsql>=0.1.11",
+    "libsql-client",
     "pyjwt>=2.11.0",
     "requests>=2.32.5",
 ]
+
+[tool.uv.sources]
+libsql-client = { git = "https://github.com/tursodatabase/libsql-client-py" }

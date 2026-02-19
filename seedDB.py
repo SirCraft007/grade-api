@@ -1,6 +1,37 @@
 import json
+import sys
+from typing import Union
 from werkzeug.security import generate_password_hash
-from config import conn, cur
+from config import db, close_db
+
+
+def to_int(value: Union[None, str, int, float, bytes]) -> int:
+    """Safely convert a Value to int."""
+    if value is None:
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        return int(float(value)) if value else 0
+    if isinstance(value, bytes):
+        return int(value.decode()) if value else 0
+    return 0
+
+
+def to_float(value: Union[None, str, int, float, bytes]) -> float:
+    """Safely convert a Value to float."""
+    if value is None:
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value) if value else 0.0
+    if isinstance(value, bytes):
+        return float(value.decode()) if value else 0.0
+    return 0.0
+
 
 with open("Grades schulNetz.json", "r") as file:
     data = json.load(file)
@@ -13,14 +44,14 @@ nograde_index = [
 ]
 
 # Drop the tables if they exist
-cur.execute("PRAGMA foreign_keys = OFF;")
-cur.execute("DROP TABLE IF EXISTS subjects;")
-cur.execute("DROP TABLE IF EXISTS grades;")
-cur.execute("DROP TABLE IF EXISTS users;")
-cur.execute("PRAGMA foreign_keys = ON;")
+db.execute("PRAGMA foreign_keys = OFF;")
+db.execute("DROP TABLE IF EXISTS subjects;")
+db.execute("DROP TABLE IF EXISTS grades;")
+db.execute("DROP TABLE IF EXISTS users;")
+db.execute("PRAGMA foreign_keys = ON;")
 print("Tables dropped")
 
-cur.execute(
+db.execute(
     """CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -35,7 +66,7 @@ cur.execute(
 )
 
 # Create the subjects table
-cur.execute(
+db.execute(
     """
 CREATE TABLE IF NOT EXISTS subjects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +82,7 @@ CREATE TABLE IF NOT EXISTS subjects (
 )
 
 # Create the grades table
-cur.execute(
+db.execute(
     """
 CREATE TABLE IF NOT EXISTS grades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,20 +101,20 @@ CREATE TABLE IF NOT EXISTS grades (
 print("Tables created")
 
 
-name = "Serafino"
+name = "Admin"
 password = "admin"
 hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
-cursor = conn.cursor()
-cursor.execute(
+result = db.execute(
     "INSERT INTO users (username, password, admin) VALUES (?, ?, ?)",
-    (name, hashed_password, True),
+    [name, hashed_password, True],
 )
-admin_id = cursor.lastrowid
+admin_id = result.last_insert_rowid
 print("User created")
 # Insert data into grades table
 subject_values = [(element, admin_id) for element in subjects]
-cur.executemany("INSERT INTO subjects (name, user_id) VALUES (?, ?)", subject_values)
+for name, user_id in subject_values:
+    db.execute("INSERT INTO subjects (name, user_id) VALUES (?, ?)", [name, user_id])
 print("Subjects created")
 values = []
 add = 0
@@ -115,25 +146,31 @@ values.append(
         admin_id,
     )
 )
-cur.executemany(
-    "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    values,
-)
+for value in values:
+    db.execute(
+        "INSERT INTO grades (date, name, grade, details, weight, subject_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        list(value),
+    )
 
 print("Grades created")
 update_queries = []
 
 # Fetch all grades in one query
-cur.execute("SELECT subject_id, grade, weight FROM grades WHERE user_id=?", (admin_id,))
-all_grades = cur.fetchall()
+result = db.execute(
+    "SELECT subject_id, grade, weight FROM grades WHERE user_id=?", [admin_id]
+)
+all_grades = result.rows
 
 # Initialize a dictionary to hold grades for each subject
 grades_dict = {i: [] for i in range(1, len(subjects) + 1)}
 
 # Populate the dictionary with fetched grades
 for grade in all_grades:
-    subject_id, grade_value, grade_weight = grade
-    grades_dict[subject_id].append((grade_value, grade_weight))
+    subject_id = to_int(grade["subject_id"]) if grade["subject_id"] is not None else 0
+    grade_value = to_float(grade["grade"]) if grade["grade"] is not None else 0.0
+    grade_weight = to_float(grade["weight"]) if grade["weight"] is not None else 1.0
+    if subject_id > 0:
+        grades_dict[subject_id].append((grade_value, grade_weight))
 
 for id, element in enumerate(subjects, start=1):
     val = 0
@@ -160,36 +197,49 @@ for id, element in enumerate(subjects, start=1):
         update_queries.append((average, points, num_exams, weight, id))
 
 # Execute all updates at once
-cur.executemany(
-    "UPDATE subjects SET average=?, points=?, num_exams=?, weight=? WHERE id=?",
-    update_queries,
-)
+for query in update_queries:
+    db.execute(
+        "UPDATE subjects SET average=?, points=?, num_exams=?, weight=? WHERE id=?",
+        list(query),
+    )
 
 print("Subjects completed")
 
-cur.execute(
+result = db.execute(
     "SELECT average,points,name,num_exams,weight FROM subjects WHERE user_id=?",
-    (admin_id,),
+    [admin_id],
 )
-subjects = cur.fetchall()
-val = 0
-sumer = 0
-points = 0
+subjects = result.rows
+val = 0.0
+sumer = 0.0
+points = 0.0
 for subject in subjects:
-    if subject[0] is not None and subject[4] is not None:
-        val += subject[0] * subject[4]
-        sumer += 1 * subject[4]
-        points += subject[1] * subject[4]
+    avg = to_float(subject["average"]) if subject["average"] is not None else 0.0
+    wgt = to_float(subject["weight"]) if subject["weight"] is not None else 0.0
+    pts = to_float(subject["points"]) if subject["points"] is not None else 0.0
+    if avg and wgt:
+        val += avg * wgt
+        sumer += 1 * wgt
+        points += pts * wgt
 total_average = round(val / sumer if sumer != 0 else 0, 3)
-total_exams = sum([subject[3] for subject in subjects if subject[3] is not None])
+total_exams = sum(
+    [
+        to_int(subject["num_exams"])
+        for subject in subjects
+        if subject["num_exams"] is not None
+    ]
+)
 
-cur.execute(
+db.execute(
     "UPDATE users SET total_average=?, total_points=?, total_exams=? WHERE id=?",
-    (total_average, points, total_exams, admin_id),
+    [total_average, points, total_exams, admin_id],
 )
 print("User completed")
-# Commit the transaction
-conn.commit()
+# Transaction is auto-committed with libsql_client
 print("Transaction completed")
 
-# Close the database
+# Close the database connection
+print("Closing database connection...")
+close_db()
+print("Database seeding completed successfully!")
+sys.exit(0)

@@ -41,7 +41,7 @@ elif url.startswith("wss://"):
 # Use synchronous HTTP-based client with error handling
 try:
     db = create_client_sync(url=url, auth_token=auth_token)
-    print(f"Connected to Turso via HTTP: {url}")
+    print("Connected to Turso via HTTP")
 except Exception as e:
     print(f"ERROR: Failed to create database connection: {e}")
     sys.exit(1)

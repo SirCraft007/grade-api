@@ -6,7 +6,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 from config import db
-import os
 
 
 def to_int(value: Union[None, str, int, float, bytes]) -> int:
@@ -727,13 +726,14 @@ def update_username(current_user):
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-@api_routes.route("/register", methods=["PUT"])
+@api_routes.route("/register", methods=["PUT", "POST"])
 def register():
+    if request.method not in ["PUT", "POST"]:
+        return jsonify({"success": False, "message": "Method not allowed"}), 405
     data = request.get_json()
     try:
         username = data.get("username")
         password = data.get("password")
-
         hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
         db.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
@@ -795,6 +795,3 @@ def admin_delete_user(current_user, user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
-
-if __name__ == "__main__":
-    os.system("python3 app.py")

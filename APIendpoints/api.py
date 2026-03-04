@@ -438,13 +438,14 @@ def get_grade(current_user, grade_id):
 def subject_grade(current_user, subject_id):
     try:
         result = db.execute(
-            "SELECT id, grade, weight, date, details FROM grades WHERE subject_id=? AND user_id=?",
+            "SELECT id, name, grade, weight, date, details FROM grades WHERE subject_id=? AND user_id=?",
             [subject_id, current_user["id"]],
         )
         
         grades_list = [
             {
                 "id": grade["id"],
+                "name": grade["name"],
                 "grade": grade["grade"],
                 "weight": grade["weight"],
                 "date": grade["date"],
@@ -461,8 +462,10 @@ def subject_grade(current_user, subject_id):
 @api_routes.route("/grades", methods=["POST"])
 @token_required
 def add_grade(current_user):
+    print("add grade")
     try:
         data = request.get_json()
+        print(data)
         date = data.get("date")
         name = data.get("name")
         grade = data.get("grade")
@@ -493,6 +496,7 @@ def add_grade(current_user):
             "INSERT INTO grades (date, name, grade, weight, details, subject_id, user_id) VALUES (?,?,?,?,?,?,?)",
             [date, name, grade, weight, details, subject_id, current_user["id"]],
         )
+        print(result)
         grade_id = result.last_insert_rowid
         message["id"] = grade_id
         update_subjects(current_user)
@@ -502,6 +506,7 @@ def add_grade(current_user):
             200,
         )
     except Exception as e:
+        print(e)
         return jsonify({"success": False, "message": str(e)}), 500
 
 
@@ -549,19 +554,23 @@ def update_grade(current_user, grade_id):
                     jsonify({"success": False, "message": f"Invalid key: {key}"}),
                     400,
                 )
-        data.pop("subject_id", None)
-        data.pop("subject_name", None)
+
+        # Get subject_id BEFORE popping from data
         if data.get("subject_id") is None:
             if data.get("subject_name") is not None:
                 response = get_subject_id(data.get("subject_name"), current_user)
                 subject_id = response["id"]
             else:
-                print("test")
                 subject_id = None
                 response = None
         else:
             subject_id = data.get("subject_id")
             response = None
+
+        # Now remove subject_id and subject_name from data to avoid updating these fields directly
+        data.pop("subject_id", None)
+        data.pop("subject_name", None)
+
         # add the subject_id to the data
         if subject_id:
             data["subject_id"] = subject_id

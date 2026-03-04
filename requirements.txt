@@ -70,8 +70,10 @@ pygments==2.19.2
     # via sphinx
 pyjwt==2.11.0
     # via graiapi-new (pyproject.toml)
-python-dotenv==1.2.1
-    # via dotenv
+python-dotenv==1.2.2
+    # via
+    #   graiapi-new (pyproject.toml)
+    #   dotenv
 requests==2.32.5
     # via
     #   graiapi-new (pyproject.toml)

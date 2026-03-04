@@ -283,7 +283,7 @@ def get_subject(current_user, subject_id):
         return jsonify({"success": False, "message": "Subject ID is required"}), 400
     try:
         result = db.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE id=? AND user_id=?",
+            "SELECT id, name, average, points, num_exams, weight FROM subjects WHERE id=? AND user_id=?",
             [subject_id, current_user["id"]],
         )
         
@@ -311,6 +311,7 @@ def get_subject(current_user, subject_id):
             "average": subject["average"],
             "points": subject["points"],
             "num_exams": subject["num_exams"],
+            "weight": subject["weight"],
             "grade_ids": grade_ids_list,
         }
         return jsonify({"success": True, "subject": subject_list}), 200
@@ -632,7 +633,7 @@ def delete_grade(current_user, grade_id):
 def get_subjects(current_user):
     try:
         result = db.execute(
-            "SELECT id, name, average, points, num_exams FROM subjects WHERE user_id=?",
+            "SELECT id, name, average, points, num_exams, weight FROM subjects WHERE user_id=?",
             [current_user["id"]],
         )
         subjects_list = [
@@ -642,9 +643,9 @@ def get_subjects(current_user):
                 "average": subject["average"],
                 "points": subject["points"],
                 "num_exams": subject["num_exams"],
-                # Assuming you want to include grade IDs here
+                "weight": subject["weight"],
             }
-            for subject in result.rows  # Combine subjects with their grade IDs
+            for subject in result.rows
         ]
         return jsonify({"success": True, "subjects": subjects_list}), 200
     except Exception as e:

@@ -31,7 +31,7 @@
       <p>
         <strong>Response:</strong> JSON array of subjects with <code>id</code>,
         <code>name</code>, <code>average</code>, <code>points</code>,
-        <code>num_exams</code> for each subject.
+        <code>num_exams</code>, <code>weight</code> for each subject.
       </p>
       <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
@@ -45,7 +45,7 @@
       <p>
         <strong>Response:</strong> JSON object containing <code>id</code>,
         <code>name</code>, <code>average</code>, <code>points</code>,
-        <code>num_exams</code> for the specified subject.
+        <code>num_exams</code>, <code>weight</code> for the specified subject.
       </p>
       <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
@@ -54,8 +54,8 @@
       <p><strong>Route:</strong> <code>POST /subjects</code></p>
       <p><strong>Description:</strong> Add a new subject.</p>
       <p>
-        <strong>Request Body:</strong> JSON containing <code>name</code>,
-        <code>average</code>, <code>points</code>, <code>num_exams</code>.
+        <strong>Request Body:</strong> JSON containing <code>name</code> and
+        optionally <code>weight</code> (defaults to 1).
       </p>
       <p><strong>Response:</strong> JSON object of the created subject.</p>
       <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
@@ -67,10 +67,11 @@
         <strong>Description:</strong> Update details of an existing subject.
       </p>
       <p>
-        <strong>Request Body:</strong> JSON containing
-        <code>name</code> and/or<code>weight</code>.
+        <strong>Request Body:</strong> JSON containing <code>name</code>
+        and/or <code>weight</code>. The <code>weight</code> field affects how
+        much the subject's average contributes to the total average (default: 1).
       </p>
-      <p><strong>Response:</strong> JSON object of the updated subject.</p>
+      <p><strong>Response:</strong> JSON object indicating success/failure.</p>
       <p><strong>Requires:</strong> <code>x-access-token</code> header.</p>
     </div>
     <div class="endpoint">

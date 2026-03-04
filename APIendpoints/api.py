@@ -205,13 +205,15 @@ def admin_token_required(f):
 
 # Function to update the average, points, and number of exams for each subject
 def update_subjects(current_user):
-    subjects_result = db.execute("SELECT id, name FROM subjects WHERE user_id=?", [current_user["id"]])
+    subjects_result = db.execute(
+        "SELECT id, name, weight FROM subjects WHERE user_id=?", [current_user["id"]]
+    )
     subjects = subjects_result.rows
     
     for subject in subjects:
         subject_id = subject["id"]
-        subject_name = subject["name"]
-        
+        weight = to_float(subject["weight"])  # Get weight from database
+
         grades_result = db.execute(
             "SELECT grade, weight FROM grades WHERE subject_id=? AND user_id=?",
             [subject_id, current_user["id"]],
@@ -220,11 +222,6 @@ def update_subjects(current_user):
         
         val = 0
         sumer = 0
-        weight = 1
-        if subject_name in ["Web of Things & Robotik", "Sport"]:
-            weight = 0
-        elif subject_name in ["Grundlagenfach Sologesang", "Musik"]:
-            weight = 0.5
 
         for grade in grades:
             if grade["grade"] and grade["grade"] != 0:

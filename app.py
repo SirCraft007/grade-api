@@ -17,7 +17,6 @@ sitemapper.init_app(app)
 
 app.config["SECRET_KEY"] = generate_api_key()
 
-
 @app.context_processor
 def inject_current_year():
     return dict(current_year=datetime.now().year)

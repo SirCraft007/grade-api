@@ -739,8 +739,35 @@ def register():
         return jsonify({"success": False, "message": "Method not allowed"}), 405
     data = request.get_json()
     try:
-        username = data.get("username")
-        password = data.get("password")
+        username = to_str(data.get("username")).strip()
+        password = to_str(data.get("password"))
+
+        if not username or not password:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Username and password are required",
+                    }
+                ),
+                400,
+            )
+
+        existing_user = db.execute(
+            "SELECT id FROM users WHERE username = ?",
+            [username],
+        )
+        if existing_user.rows and existing_user.rows[0]:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Username already exists",
+                    }
+                ),
+                409,
+            )
+
         hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
         db.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
@@ -758,6 +785,9 @@ def register():
             ),
             201,
         )
+    except KeyError as e:
+        # libsql-client can raise KeyError("result") on some failed writes
+        return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
